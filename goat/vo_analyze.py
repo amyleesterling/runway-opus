@@ -1,6 +1,6 @@
-import subprocess, numpy as np, glob, json, os
+import subprocess, numpy as np, glob, json, os, sys
 out = {}
-for p in sorted(glob.glob('media/vo/*.mp3')):
+for p in sorted(glob.glob((sys.argv[1] if len(sys.argv) > 1 else 'media/vo') + '/*.mp3')):
     raw = subprocess.run(['ffmpeg','-v','quiet','-i',p,'-f','s16le','-ac','1','-ar','16000','-'],capture_output=True).stdout
     x = np.frombuffer(raw,np.int16).astype(np.float32)/32768
     hop = 160  # 10ms
@@ -21,5 +21,5 @@ for p in sorted(glob.glob('media/vo/*.mp3')):
         else: m.append(s)
     m=[s for s in m if s[1]-s[0]>0.06]
     out[os.path.basename(p)[:-4]] = {"dur": len(x)/16000, "a": m[0][0], "b": m[-1][1], "segs": [[round(a,2),round(b,2)] for a,b in m]}
-json.dump(out, open('media/vo.json','w'), indent=1)
+json.dump(out, open(sys.argv[2] if len(sys.argv) > 2 else 'media/vo.json','w'), indent=1)
 for k,v in out.items(): print(k, round(v['a'],2), round(v['b'],2), v['segs'])
