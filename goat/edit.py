@@ -1,4 +1,4 @@
-"""THE G.O.A.T. — v6 edit: one Swedish narrator, fourteen destructions, more fire. Builds render/timeline.json + media/mix.wav.
+"""THE G.O.A.T. — v7 edit: the 90-second cut of v6. Builds render/timeline.json + media/mix.wav.
 
 Every sequence is laid out on a running cursor and synced to measured VO phrase timings (media/vo.json).
 """
@@ -89,7 +89,7 @@ def grade_vintage():
 VO6J = json.load(open("media/vo6.json"))
 
 
-def N(name, start, gain=1.0, maxgap=.3, speed=1.2):
+def N(name, start, gain=1.0, maxgap=.22, speed=1.35):
     """Narrator line (media/vo6) at `start`, sped up `speed`x (pitch kept), long pauses squeezed. Returns (length, phrases)."""
     v = VO6J[name]
     groups = [[v["segs"][0][0], v["segs"][0][1]]]
@@ -156,16 +156,6 @@ G("flash", cut2 + .5, .3, color="#ffe9a8", alpha=.7); G("shock", cut2 + .5, .7)
 S("boom", cut2 + .5, -3); S("heavenly", cut2 + .6, -8)
 G("beast", cut2, end - cut2, words=[{"t": .6, "text": "BOOM! ALIVE AGAIN!", "fill": "#ffd400", "size": 140, "y": 220, "rot": 2, "hold": 9}])
 T = end
-wipe(T)
-st = T
-L, ph = N("thesis", st + .2)
-en = st + .2 + L + .4
-V("myth_julbock", st, en - st, kb={"z0": 1.15, "z1": 1.3})
-M("m_credits", st, en - st + .2, gain=-11, fi=.1, fo=.2)
-G("beast", st, en - st, words=[{"t": ph[-1][0] - st - .1, "text": "A GOAT THAT DIES...", "fill": "#fff", "size": 110, "y": 200, "rot": -2, "hold": 9},
-                               {"t": ph[-1][0] - st + .9, "text": "AND COMES BACK!", "fill": "#ff8a1f", "size": 130, "y": 340, "rot": 2, "hold": 9}])
-T = en
-
 # ---- 1966 -------------------------------------------------------------------------------
 wipe(T)
 st = T
@@ -185,29 +175,11 @@ G("yearSlam", t_burn + .1, 1.4, year="31 DEC 1966", size=150, y=220)
 S("crowd_gasp", t_burn + .4, -6)
 T = en
 
-# ---- 43 --------------------------------------------------------------------------------
-wipe(T, -1)
-st = T
-L, ph = N("grid", st + .2)
-en = st + .2 + L + .6
-G("solid", st, en - st, color="#0b1024")
-G("particles", st, en - st, kind="embers", n=140, alpha=.7)
-import random
-order = random.Random(1966).sample(range(60), 43)
-G("goatgrid", st, en - st, order=order, t0=.3, t1=min(en - st - .5, 3.0))
-S("counter", st + .3, -10, dur=2.7); S("register", st + 3.0, -3); G("shock", st + 3.0, .8, y=140)
-T = en
-
 # ---- THE RAP SHEET (14 destructions) ----------------------------------------------------
-story(1970, "n1970", "r1970", "1970", "6 HOURS", "two drunk teenagers")
-story(1973, "n1973", "r1973", "1973", "STOLEN", "found in a man's back garden", fire=False, grade=grade_vintage())
 st, en, ph = story(1976, "y1976", "r1976", "1976", "HIT BY A VOLVO", "Volvo Amazon · hind legs", speed=.7, fire=False, grade=grade_vintage())
 S("crash", st + .35, -2); G("zoomblur", st + .4, .4)
 st, en, ph = story(1985, "n1985", "r1985", "1985", "GUARDED BY THE ARMY", "burned anyway")
 G("stamp", ph[-1][0], en - ph[-1][0], text="BURNED\nANYWAY", x=1450, y=300, size=100, rot=-10)
-S("stamp", ph[-1][0], -2)
-st, en, ph = story(2001, "burning", "r2001", "2001", "THE TOURIST", "“I thought it was a tradition”", speed=.6)
-G("stamp", ph[-1][0], en - ph[-1][0], text="NOT A\nTRADITION", x=1400, y=300, size=100, rot=-10)
 S("stamp", ph[-1][0], -2)
 # 2005 — the arrow (Santa now actually aims at the goat)
 wipe(T)
@@ -253,27 +225,6 @@ BOOM(t_fire, big=1.3); burn(t_fire, en - t_fire, h=700)
 G("beast", t_fire, en - t_fire, words=[{"t": .05, "text": "FIRE!!!", "fill": "#ff2a2a", "size": 260, "hold": 9, "rot": -3}])
 T = en
 
-st, en, ph = story(2015, "n2015", "r2015", "2015", "CAUGHT", "burned face · smelled of petrol · holding a lighter", fire=False)
-G("stamp", ph[-1][0] - .3, en - ph[-1][0] + .3, text="“EXTREMELY\nBAD IDEA”", x=1420, y=300, size=90, rot=-8, color="#ffd400")
-S("stamp", ph[-1][0] - .3, -2)
-
-# 2016 — the birthday
-st = T
-slam(2016, st)
-L, ph = N("r2016", st + .2)
-t_b = ph[max(0, len(ph) - 4)][0] - .05 if len(ph) >= 4 else st + .2 + L * .55
-en = st + .2 + L + .9
-V("y2016", st, en - st, kb={"z0": 1.05, "z1": 1.3}, grade={"sat": 1.3})
-G("particles", st, t_b - st, kind="confetti", n=120)
-G("lower", st + .7, t_b - st - .7, tag="2016", title="50th BIRTHDAY PARTY", sub="party hats: optional")
-S("party", st + .8, -5)
-for i, p in enumerate(ph[-3:]):
-    FX("fx_fireball", p[0] - .05, 1.3, alpha=.8, kb={"z0": 1.3}, fo=.5); S("boom", p[0], -6)
-burn(t_b, en - t_b, h=640)
-G("beast", t_b, en - t_b, words=[{"t": p[0] - t_b, "text": w, "fill": c, "size": 210, "rot": r}
-                                 for p, w, c, r in zip(ph[-3:], ["BURNED.", "SAME.", "NIGHT!"], ["#ff2a2a", "#fff", "#ffd400"], [-4, 3, -2])])
-T = en
-
 st, en, ph = story(2023, "birds", "r2023", "2023", "EATEN BY BIRDS", "jackdaws · the straw had extra seeds", fire=False)
 S("birds", st, -6, dur=en - st, fo=.5)
 st, en, ph = story(2025, "n2025", "r2025", "2025", "FACEPLANT", "Storm Johannes", fire=False)
@@ -297,19 +248,18 @@ G("caption", HIT + .4, 3.9, text="satirical puppets · not the real people", fon
 T = HIT + 4.3
 N0 = T
 L, ph = N("run", N0 + .1)
-V("naruto", N0, 6.5, kb={"z0": 1.0, "z1": 1.1}, shake={"amp": 5})
+V("naruto", N0, 5.2, kb={"z0": 1.0, "z1": 1.1}, shake={"amp": 5})
 G("speedlines", N0, 5.2, fo=.6)
 G("beast", N0, 5.4, words=[{"t": .1, "text": "NARUTO RUN!!!", "fill": "#ff8a1f", "size": 170, "y": 180, "rot": 3, "hold": 9}])
-M("m_hype", N0, 6.5, gain=-8, fi=.05, fo=.6, trim=12.0)
+M("m_hype", N0, 5.2, gain=-8, fi=.05, fo=.6, trim=12.0)
 S("whoosh", N0 + .1, -3); S("whoosh2", N0 + 1.2, -4); S("whoosh", N0 + 2.4, -4)
-G("stamp", N0 + 5.3, 1.2, text="CASE STATUS:\nSTILL UNSOLVED", x=1450, y=860, size=70, rot=-8, color="#ffd400")
-S("stamp", N0 + 5.3, -4)
-T = N0 + 6.5
+G("stamp", N0 + 4.0, 1.2, text="CASE STATUS:\nSTILL UNSOLVED", x=1450, y=860, size=70, rot=-8, color="#ffd400")
+S("stamp", N0 + 4.0, -4)
+T = N0 + 5.2
 
 # ---- END CARD --------------------------------------------------------------------------------
 Z = T
-L, ph = N("outro", Z + .4)
-ZD = max(5.0, L + 1.4)
+ZD = 3.8
 V("fire_title", Z, ZD, speed=.8, grade={"con": 1.15, "sat": 1.2}, kb={"z0": .8, "z1": .86, "y0": -.07}, fi=.2)
 FX("fx_embers", Z, ZD, alpha=.8)
 for dx in (-.34, 0, .34):
