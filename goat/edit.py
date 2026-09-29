@@ -331,14 +331,18 @@ G("news", R0, REVEAL - .1, tag="BREAKING", headline="2005 GOAT ARSON: SUSPECTS F
   ticker="SATIRE ALERT  •  NO FORMER PRESIDENTS WERE INVOLVED IN ANY GOAT FIRES  •  GOAT STILL FACE-DOWN IN SNOW  •  NORTH POLE RELIEVED")
 S("riser", R0, -8, dur=REVEAL)
 RV = R0 + REVEAL
-V("unmask_post", RV, 5.0, kb={"z0": 1.25, "z1": 1.05}, shake={"amp": 16, "decay": 3})
-S("scratch", RV - .05, -3); S("braam", RV, -2); S("crowd_gasp", RV + .2, -6); S("whoosh", RV - .1, -4)
-G("flash", RV, .25, color="#fff", alpha=.8); G("zoomblur", RV, .6, amt=1.5)
-G("beast", RV, 5.0, words=[{"t": .15, "text": "WHAT?!", "fill": "#ffd400", "size": 190, "y": 180, "rot": -4, "hold": 1.4}])
-G("stamp", RV + 1.6, 3.4, text="SATIRE.\nOBVIOUSLY.", x=960, y=880, size=80, rot=-6, color="#ff2a2a")
-S("stamp", RV + 1.6, -2)
-G("caption", RV + .4, 4.6, text="satirical puppets · not the real people", font="500 28px Inter5", x=960, y=1040, fill="#ddd", ls="3px")
-T = RV + 5.0
+# continuous unmasking: a Hailuo clip of the puppets putting their disguises ON, played in reverse
+V("unmask_rev", RV, 3.6, from_=3.0, kb={"z0": 1.05, "z1": 1.15})
+G("flash", RV, .15, color="#fff", alpha=.5); S("whoosh", RV - .1, -4)
+HIT = RV + 1.5   # gingerbread head comes off / beard comes down
+S("scratch", HIT - .05, -3); S("braam", HIT, -2); S("crowd_gasp", HIT + .2, -6)
+G("zoomblur", HIT, .6, amt=1.2)
+G("beast", HIT, 3.6 + 2.6 - 1.5, words=[{"t": .1, "text": "WHAT?!", "fill": "#ffd400", "size": 190, "y": 180, "rot": -4, "hold": 1.5}])
+V("unmask_post", RV + 3.6, 2.6, kb={"z0": 1.15, "z1": 1.25}, shake={"amp": 8, "decay": 3})
+G("stamp", HIT + 1.7, RV + 6.2 - HIT - 1.7, text="SATIRE.\nOBVIOUSLY.", x=960, y=880, size=80, rot=-6, color="#ff2a2a")
+S("stamp", HIT + 1.7, -2)
+G("caption", HIT + .4, RV + 6.2 - HIT - .4, text="satirical puppets · not the real people", font="500 28px Inter5", x=960, y=1050, fill="#ddd", ls="3px")
+T = RV + 6.2
 N0 = T
 V("naruto", N0, 6.5, kb={"z0": 1.0, "z1": 1.1}, shake={"amp": 5})
 G("speedlines", N0, 5.2, fo=.6)
