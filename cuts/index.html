@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>THE G.O.A.T. Cuts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #0b0806; --card: #17110c; --line: #2c2016; --text: #f4e9dc; --muted: #b3a28f; --fire: #ff8a1f; --red: #ff3b2f; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 Inter, system-ui, sans-serif; }
+  header { padding: 48px 16px 24px; text-align: center;
+           background: radial-gradient(ellipse at 50% 120%, rgba(255,110,20,.35), transparent 60%); }
+  h1 { font: 400 clamp(44px, 9vw, 96px)/1 Anton, Impact, sans-serif; margin: 0; letter-spacing: .02em;
+       background: linear-gradient(#fff4c2, #ffb300 45%, #ff2d00); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .sub { color: var(--muted); margin: 8px 0 0; }
+  main { max-width: 1400px; margin: 0 auto; padding: 8px 16px 64px; }
+  .controls { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin: 0 0 24px; }
+  button { font: 600 15px Inter, sans-serif; color: #1a0e05; background: var(--fire); border: 0; border-radius: 999px; padding: 10px 20px; cursor: pointer; }
+  button.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr)); gap: 20px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  video { display: block; width: 100%; aspect-ratio: 16/9; background: #000; }
+  .meta { padding: 16px 18px 20px; }
+  .tag { display: inline-block; font: 800 12px Inter; letter-spacing: .08em; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; background: var(--line); color: var(--muted); }
+  .tag.latest { background: var(--red); color: #fff; }
+  h2 { font: 400 30px/1.1 Anton, Impact, sans-serif; margin: 10px 0 2px; letter-spacing: .02em; }
+  .rt { color: var(--fire); font-weight: 600; }
+  ul { margin: 10px 0 0; padding-left: 18px; color: var(--muted); }
+  footer { text-align: center; color: var(--muted); font-size: 14px; padding: 0 16px 40px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>THE G.O.A.T.</h1>
+  <p class="sub">Greatest Of All Tinder · three cuts, side by side</p>
+</header>
+<main>
+  <div class="controls">
+    <button id="all">▶ Play all from the start</button>
+    <button class="ghost" id="stop">■ Pause all</button>
+  </div>
+  <div class="grid">
+    <article class="card">
+      <video src="v1_original.mp4" poster="v1_original.jpg" controls preload="metadata" playsinline></video>
+      <div class="meta"><span class="tag">v1</span>
+        <h2>Original cut</h2><div class="rt">4:33</div>
+        <ul><li>Mr Beast cold open, Shakespearean goat soliloquy</li><li>XKCD “What If?”, Lao Tzu ink coda, full credits roll</li></ul>
+      </div>
+    </article>
+    <article class="card">
+      <video src="v2_flametastic.mp4" poster="v2_flametastic.jpg" controls preload="metadata" playsinline></video>
+      <div class="meta"><span class="tag">v2</span>
+        <h2>Flametastic</h2><div class="rt">4:33</div>
+        <ul><li>Same edit as v1 plus Runway fire plates: fireballs, flame walls, pyro</li><li>Burning-straw title, producer credits</li></ul>
+      </div>
+    </article>
+    <article class="card">
+      <video src="v3_recut.mp4" poster="v3_recut.jpg" controls preload="metadata" playsinline></video>
+      <div class="meta"><span class="tag latest">v3 · latest</span>
+        <h2>The re-cut</h2><div class="rt">1:52</div>
+        <ul><li>Opens by explaining why the goat exists</li><li>60-goat ignition grid, Goat News Network, every clip used once</li></ul>
+      </div>
+    </article>
+  </div>
+</main>
+<footer>Written &amp; Directed by Claude “The Goatfather” · Produced by @amyleesterling · Made with Runway</footer>
+<script>
+  const vids = [...document.querySelectorAll('video')];
+  document.getElementById('all').onclick = () => vids.forEach(v => { v.currentTime = 0; v.muted = v !== vids[vids.length - 1]; v.play(); });
+  document.getElementById('stop').onclick = () => vids.forEach(v => v.pause());
+  // only one cut plays sound at a time when started individually
+  vids.forEach(v => v.addEventListener('play', () => { if (!v.muted) vids.forEach(o => { if (o !== v && !o.muted) o.pause(); }); }));
+</script>
+</body>
+</html>

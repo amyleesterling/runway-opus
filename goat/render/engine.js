@@ -165,6 +165,7 @@ R.video = async (L, lt) => {
   const im = await img(src).p; if (!im) return;
   ctx.save();
   ctx.globalAlpha = fade(lt, L.dur, L.fi, L.fo) * (L.alpha ?? 1);
+  if (L.blend) ctx.globalCompositeOperation = L.blend;
   let f = '';
   const g = L.grade || {};
   if (g.sat != null) f += `saturate(${g.sat}) `;
@@ -550,6 +551,190 @@ R.match = (L, lt) => { // a single struck match in the dark
   ctx.fillStyle = '#7a1b10'; ctx.beginPath(); ctx.ellipse(W / 2, H / 2 + 60, 11, 16, 0, 0, 7); ctx.fill();
   ctx.shadowColor = '#ffae00'; ctx.shadowBlur = 50;
   flame(W / 2, H / 2 + 62, 1.0 * k, lt, 4);
+  ctx.restore();
+};
+
+// ---------- FLAMETASTIC VFX ----------
+// procedural particle fire: additive gradient blobs rising along a baseline
+R.fire = (L, lt) => {
+  const N = L.n || 280, x0 = L.x0 ?? 0, x1 = L.x1 ?? W, by = L.y ?? H + 40, hh = L.h ?? 460, sz = L.size ?? 70;
+  const k = fade(lt, L.dur, L.fi ?? .3, L.fo ?? .5) * (L.intensity ?? 1);
+  if (k <= 0) return;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < N; i++) {
+    const r1 = rnd(i, 11), r2 = rnd(i, 12), r3 = rnd(i, 13), life = .7 + r3 * 1.1;
+    const age = ((lt + r1 * life) % life) / life;
+    const bx = x0 + r2 * (x1 - x0);
+    const x = bx + noise1(lt * 2.2 + i, 7) * 55 * age + (L.wind || 0) * age * 120;
+    const y = by - age * hh * (.55 + r1 * .7);
+    const rad = sz * (1.1 - age * .8) * (.6 + r3 * .7);
+    const a = Math.pow(1 - age, 1.4) * .42 * k;
+    const c = age < .18 ? '255,240,190' : age < .45 ? '255,165,40' : '235,70,12';
+    const g = ctx.createRadialGradient(x, y, 0, x, y, rad);
+    g.addColorStop(0, `rgba(${c},${a})`); g.addColorStop(1, `rgba(${c},0)`);
+    ctx.fillStyle = g; ctx.fillRect(x - rad, y - rad, rad * 2, rad * 2);
+  }
+  // hot glow at the base
+  const gg = ctx.createLinearGradient(0, by - hh * .9, 0, by);
+  gg.addColorStop(0, 'rgba(255,90,0,0)'); gg.addColorStop(1, `rgba(255,110,10,${.35 * k})`);
+  ctx.fillStyle = gg; ctx.fillRect(x0, by - hh * .9, x1 - x0, hh * .9);
+  ctx.restore();
+};
+
+// expanding fire shockwave ring + core flash
+R.shock = (L, lt) => {
+  const p = clamp(lt / L.dur), cx = L.x ?? W / 2, cy = L.y ?? H / 2, R0 = (L.r ?? 1300) * eOut(p);
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  const core = ctx.createRadialGradient(cx, cy, 0, cx, cy, 500 * (1 - p) + 50);
+  core.addColorStop(0, `rgba(255,250,220,${.9 * (1 - p)})`); core.addColorStop(1, 'rgba(255,120,0,0)');
+  ctx.fillStyle = core; ctx.fillRect(0, 0, W, H);
+  for (let k = 0; k < 3; k++) {
+    ctx.strokeStyle = `rgba(${k ? '255,140,20' : '255,230,160'},${(1 - p) * (.9 - k * .25)})`;
+    ctx.lineWidth = (60 - k * 18) * (1 - p) + 4; ctx.shadowColor = '#ff6a00'; ctx.shadowBlur = 60;
+    ctx.beginPath(); ctx.ellipse(cx, cy, R0 * (1 - k * .06), R0 * .42 * (1 - k * .06), 0, 0, 7); ctx.stroke();
+  }
+  ctx.restore();
+};
+
+// heat-haze + orange grade over whatever is below
+R.heat = (L, lt) => {
+  const k = fade(lt, L.dur, L.fi ?? .3, L.fo ?? .3) * (L.amt ?? 1);
+  tctx.clearRect(0, 0, W, H); tctx.drawImage(cv, 0, 0);
+  ctx.save();
+  for (let y = 0; y < H; y += 24) { // wobble horizontal strips
+    const dx = Math.sin(y * .05 + lt * 9) * 5 * k;
+    ctx.drawImage(tmp, 0, y, W, 24, dx, y, W, 24);
+  }
+  ctx.globalCompositeOperation = 'overlay'; ctx.globalAlpha = .35 * k;
+  ctx.fillStyle = '#ff5a00'; ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+};
+
+// ---------- v3 MOTION GRAPHICS ----------
+function sil(kind, x, y, h, col) { // simple flat silhouettes standing on (x, y), height h px
+  ctx.save(); ctx.fillStyle = col; ctx.strokeStyle = col; ctx.lineCap = 'round';
+  if (kind === 'human') {
+    ctx.beginPath(); ctx.arc(x, y - h * .9, h * .1, 0, 7); ctx.fill();
+    ctx.lineWidth = h * .12; ctx.beginPath(); ctx.moveTo(x, y - h * .78); ctx.lineTo(x, y - h * .42);
+    ctx.moveTo(x, y - h * .45); ctx.lineTo(x - h * .12, y); ctx.moveTo(x, y - h * .45); ctx.lineTo(x + h * .12, y);
+    ctx.moveTo(x, y - h * .72); ctx.lineTo(x - h * .18, y - h * .45); ctx.moveTo(x, y - h * .72); ctx.lineTo(x + h * .18, y - h * .45); ctx.stroke();
+  } else if (kind === 'giraffe') {
+    ctx.lineWidth = h * .05;
+    ctx.fillRect(x - h * .2, y - h * .5, h * .38, h * .18);
+    for (const dx of [-.17, -.1, .08, .15]) { ctx.beginPath(); ctx.moveTo(x + dx * h, y - h * .34); ctx.lineTo(x + dx * h, y); ctx.stroke(); }
+    ctx.lineWidth = h * .06; ctx.beginPath(); ctx.moveTo(x + h * .14, y - h * .48); ctx.lineTo(x + h * .26, y - h * .92); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(x + h * .31, y - h * .93, h * .08, h * .04, .3, 0, 7); ctx.fill();
+  } else if (kind === 'bus') {
+    ctx.fillRect(x - h * .9, y - h * .95, h * 1.8, h * .88);
+    ctx.fillStyle = 'rgba(0,0,0,.35)';
+    for (let r = 0; r < 2; r++) for (let c = 0; c < 6; c++) ctx.fillRect(x - h * .8 + c * h * .28, y - h * .85 + r * h * .4, h * .2, h * .22);
+    ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x - h * .55, y - h * .06, h * .1, 0, 7); ctx.arc(x + h * .55, y - h * .06, h * .1, 0, 7); ctx.fill();
+  }
+  ctx.restore();
+}
+
+// measuring tape next to the goat + comparison silhouettes
+R.ruler = (L, lt) => {
+  const x = L.x ?? 1480, y0 = L.y0 ?? 930, y1 = L.y1 ?? 130, m = L.metres ?? 13, grow = eOut(lt / .9);
+  const yTop = lerp(y0, y1, grow), a = fade(lt, L.dur, .1, .3);
+  ctx.save(); ctx.globalAlpha = a;
+  ctx.fillStyle = '#ffd400'; ctx.fillRect(x - 18, yTop, 36, y0 - yTop);
+  ctx.fillStyle = '#111'; ctx.font = '700 22px Mono'; ctx.textAlign = 'left';
+  for (let i = 0; i <= m; i++) {
+    const yy = y0 - (y0 - y1) * i / m; if (yy < yTop) break;
+    ctx.fillRect(x - 18, yy - 2, i % 5 === 0 ? 36 : 20, 4);
+    if (i % 5 === 0 && i) ctx.fillText(String(i), x - 14, yy + 22);
+  }
+  if (grow > .98) {
+    const k = pop(lt - .9, .3);
+    ctx.save(); ctx.translate(x + 60, y1 + 20); ctx.scale(k, k);
+    strokeText(`${m} METRES`, 0, 0, { size: 90, font: 'Anton', fill: '#ffd400', align: 'left', stroke: 12 }); ctx.restore();
+  }
+  (L.items || []).forEach((it, i) => {
+    const k = clamp((lt - it.t) / .35); if (k <= 0) return;
+    const hpx = (y0 - y1) * it.m / m;
+    ctx.save(); ctx.globalAlpha = a * k; ctx.translate(0, (1 - eBack(k)) * 60);
+    sil(it.kind, it.x, y0, hpx, '#ffffff');
+    ctx.font = '800 30px Inter'; ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
+    ctx.shadowColor = '#000'; ctx.shadowBlur = 12;
+    ctx.fillText(it.label, it.x, y0 + 50);
+    ctx.restore();
+  });
+  ctx.restore();
+};
+
+// 60 goats, 43 ignite
+function goatIcon(x, y, s, state, lt, seed) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  const burnt = state > 0;
+  ctx.fillStyle = burnt ? '#6b5448' : '#f2c14e'; ctx.strokeStyle = burnt ? '#6b5448' : '#f2c14e';
+  ctx.fillRect(-30, -22, 60, 24);
+  ctx.lineWidth = 7; ctx.lineCap = 'round';
+  for (const lx of [-24, -12, 12, 24]) { ctx.beginPath(); ctx.moveTo(lx, 0); ctx.lineTo(lx, 24); ctx.stroke(); }
+  ctx.fillRect(22, -44, 18, 20);
+  ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(28, -44); ctx.quadraticCurveTo(14, -70, -4, -56); ctx.stroke();
+  if (!burnt) { ctx.fillStyle = '#d4202a'; ctx.fillRect(-4, -22, 8, 24); }
+  ctx.restore();
+  if (burnt && state < 1.2) { ctx.save(); ctx.globalAlpha = 1; flame(x, y + 20 * s, s * .7 * (1.3 - state), lt, seed); ctx.restore(); }
+  else if (burnt) { ctx.save(); ctx.globalAlpha = .5; flame(x, y + 20 * s, s * .25, lt, seed); ctx.restore(); }
+}
+R.goatgrid = (L, lt) => {
+  const cols = 12, rows = 5, sx = 150, sy = 150, x0 = W / 2 - (cols - 1) * sx / 2, y0 = 330;
+  const order = L.order, a = fade(lt, L.dur, .15, .3);
+  let n = 0;
+  ctx.save(); ctx.globalAlpha = a;
+  for (let i = 0; i < cols * rows; i++) {
+    const r = Math.floor(i / cols), c = i % cols;
+    const k = pop(lt - (r * .04 + c * .015), .3);
+    const rank = order.indexOf(i), ti = rank >= 0 ? L.t0 + (L.t1 - L.t0) * (1 - Math.pow(1 - rank / 42, 1.8)) : 1e9;
+    const st = lt >= ti ? (lt - ti) / .5 : 0;
+    if (st > 0) n++;
+    if (k > 0) goatIcon(x0 + c * sx, y0 + r * sy, 1.35 * k, st, lt, i);
+  }
+  ctx.restore();
+  const s = n === 43 ? 1 + .3 * Math.exp(-(lt - L.t1) * 5) : 1;
+  ctx.save(); ctx.globalAlpha = a; ctx.translate(W / 2, 140); ctx.scale(s, s);
+  strokeText(`${n} / 60  DESTROYED`, 0, 0, { size: 110, font: 'Anton', fill: n === 43 ? '#ff2a2a' : '#fff', stroke: 14 });
+  ctx.restore();
+};
+
+// Goat News Network breaking-news package
+R.news = (L, lt) => {
+  const k = eOut(lt / .35), a = fade(lt, L.dur, 0, .25);
+  ctx.save(); ctx.globalAlpha = a;
+  const y = H - 230;
+  ctx.fillStyle = '#c8102e'; ctx.fillRect(lerp(-600, 60, k), y, 330, 80);
+  ctx.fillStyle = '#fff'; ctx.font = '800 46px Inter'; ctx.textBaseline = 'middle';
+  ctx.fillText(L.tag || 'BREAKING', lerp(-600, 60, k) + 24, y + 42);
+  ctx.fillStyle = 'rgba(255,255,255,.96)'; ctx.fillRect(lerp(-2000, 60, eOut((lt - .1) / .4)), y + 80, 1800, 96);
+  ctx.fillStyle = '#111'; ctx.font = '800 54px Inter';
+  ctx.fillText(L.headline.slice(0, Math.ceil(L.headline.length * clamp((lt - .35) / .5))), 90, y + 130);
+  // ticker
+  ctx.fillStyle = '#111'; ctx.fillRect(0, H - 54, W, 54);
+  ctx.fillStyle = '#ffd400'; ctx.fillRect(0, H - 54, 210, 54);
+  ctx.fillStyle = '#111'; ctx.font = '800 30px Inter'; ctx.fillText('GNN', 60, H - 26);
+  ctx.save(); ctx.beginPath(); ctx.rect(210, H - 54, W - 210, 54); ctx.clip();
+  ctx.fillStyle = '#fff'; ctx.font = '500 30px Inter5';
+  const tick = (L.ticker || '') + '   •   ';
+  const tw = ctx.measureText(tick).width, off = (lt * 220) % tw;
+  for (let x = 230 - off; x < W; x += tw) ctx.fillText(tick, x, H - 26);
+  ctx.restore();
+  // live bug
+  ctx.fillStyle = '#c8102e'; roundRect(W - 230, 50, 170, 56, 8); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.font = '800 32px Inter'; ctx.fillText('● LIVE', W - 210, 80);
+  ctx.restore();
+};
+
+// slanted colour-bar wipe (covers the cut at the midpoint)
+R.wipe = (L, lt) => {
+  const p = clamp(lt / L.dur), cols = L.colors || ['#ffd400', '#ff2a2a', '#111'];
+  ctx.save();
+  cols.forEach((c, i) => {
+    const q = eIO(clamp(p * 1.4 - i * .12));
+    const x = lerp(-W * 1.6, W * 1.3, q) * (L.dir || 1);
+    ctx.fillStyle = c; ctx.save(); ctx.translate(x + (L.dir === -1 ? W : 0), 0); ctx.transform(1, 0, -.35, 1, 0, 0);
+    ctx.fillRect(0, 0, W * .9, H); ctx.restore();
+  });
   ctx.restore();
 };
 
