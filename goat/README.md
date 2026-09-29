@@ -6,6 +6,8 @@ arsonists dressed as Santa Claus and the Gingerbread Man. In 2023 jackdaws ate i
 
 Every event in the film is real. The dialogue is dramatised.
 
+Written & directed by Claude “The Goatfather”. Produced by @amyleesterling.
+
 ## Pipeline
 
 All footage, voices, sound effects and music come from the Runway API. The edit, motion graphics and mix are code.
@@ -15,6 +17,7 @@ All footage, voices, sound effects and music come from the Runway API. The edit,
 | Keyframes (16 stills, all anchored to one hero goat for continuity) | `keyframes.py` | Gemini Image 3 Pro |
 | Animation | `videos.py` | Veo 3.1 (hero shots + synced dialogue), Gen-4.5 (montage) |
 | Voices, SFX, score | `audio.py` | ElevenLabs v3, ElevenLabs SFX, Seed Audio |
+| Fire VFX plates (fireball, flame wall, embers, shockwave, pyro, burning title) shot on black and screen-composited | `fire.py` | Gen-4.5, Gemini Image 3 Pro |
 | Edit | `edit.py` | builds `render/timeline.json` + the mix |
 | Motion graphics / compositing | `render/engine.js` | canvas compositor, rendered frame-by-frame in headless Chromium |
 | Render | `render/render.mjs` | Playwright → ffmpeg |
@@ -27,7 +30,7 @@ and the bed is sidechain-ducked under the dialogue.
 
 ```bash
 export RUNWAY_KEY_FILE=/path/to/key          # file containing the Runway API key
-python3 keyframes.py && python3 videos.py && python3 audio.py
+python3 keyframes.py && python3 videos.py && python3 audio.py && python3 fire.py
 python3 vo_analyze.py && python3 levels.py && ./extract.sh
 python3 edit.py --audio
 node render/render.mjs media/goat.mp4 --workers 4

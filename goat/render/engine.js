@@ -165,6 +165,7 @@ R.video = async (L, lt) => {
   const im = await img(src).p; if (!im) return;
   ctx.save();
   ctx.globalAlpha = fade(lt, L.dur, L.fi, L.fo) * (L.alpha ?? 1);
+  if (L.blend) ctx.globalCompositeOperation = L.blend;
   let f = '';
   const g = L.grade || {};
   if (g.sat != null) f += `saturate(${g.sat}) `;
@@ -550,6 +551,62 @@ R.match = (L, lt) => { // a single struck match in the dark
   ctx.fillStyle = '#7a1b10'; ctx.beginPath(); ctx.ellipse(W / 2, H / 2 + 60, 11, 16, 0, 0, 7); ctx.fill();
   ctx.shadowColor = '#ffae00'; ctx.shadowBlur = 50;
   flame(W / 2, H / 2 + 62, 1.0 * k, lt, 4);
+  ctx.restore();
+};
+
+// ---------- FLAMETASTIC VFX ----------
+// procedural particle fire: additive gradient blobs rising along a baseline
+R.fire = (L, lt) => {
+  const N = L.n || 280, x0 = L.x0 ?? 0, x1 = L.x1 ?? W, by = L.y ?? H + 40, hh = L.h ?? 460, sz = L.size ?? 70;
+  const k = fade(lt, L.dur, L.fi ?? .3, L.fo ?? .5) * (L.intensity ?? 1);
+  if (k <= 0) return;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < N; i++) {
+    const r1 = rnd(i, 11), r2 = rnd(i, 12), r3 = rnd(i, 13), life = .7 + r3 * 1.1;
+    const age = ((lt + r1 * life) % life) / life;
+    const bx = x0 + r2 * (x1 - x0);
+    const x = bx + noise1(lt * 2.2 + i, 7) * 55 * age + (L.wind || 0) * age * 120;
+    const y = by - age * hh * (.55 + r1 * .7);
+    const rad = sz * (1.1 - age * .8) * (.6 + r3 * .7);
+    const a = Math.pow(1 - age, 1.4) * .42 * k;
+    const c = age < .18 ? '255,240,190' : age < .45 ? '255,165,40' : '235,70,12';
+    const g = ctx.createRadialGradient(x, y, 0, x, y, rad);
+    g.addColorStop(0, `rgba(${c},${a})`); g.addColorStop(1, `rgba(${c},0)`);
+    ctx.fillStyle = g; ctx.fillRect(x - rad, y - rad, rad * 2, rad * 2);
+  }
+  // hot glow at the base
+  const gg = ctx.createLinearGradient(0, by - hh * .9, 0, by);
+  gg.addColorStop(0, 'rgba(255,90,0,0)'); gg.addColorStop(1, `rgba(255,110,10,${.35 * k})`);
+  ctx.fillStyle = gg; ctx.fillRect(x0, by - hh * .9, x1 - x0, hh * .9);
+  ctx.restore();
+};
+
+// expanding fire shockwave ring + core flash
+R.shock = (L, lt) => {
+  const p = clamp(lt / L.dur), cx = L.x ?? W / 2, cy = L.y ?? H / 2, R0 = (L.r ?? 1300) * eOut(p);
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  const core = ctx.createRadialGradient(cx, cy, 0, cx, cy, 500 * (1 - p) + 50);
+  core.addColorStop(0, `rgba(255,250,220,${.9 * (1 - p)})`); core.addColorStop(1, 'rgba(255,120,0,0)');
+  ctx.fillStyle = core; ctx.fillRect(0, 0, W, H);
+  for (let k = 0; k < 3; k++) {
+    ctx.strokeStyle = `rgba(${k ? '255,140,20' : '255,230,160'},${(1 - p) * (.9 - k * .25)})`;
+    ctx.lineWidth = (60 - k * 18) * (1 - p) + 4; ctx.shadowColor = '#ff6a00'; ctx.shadowBlur = 60;
+    ctx.beginPath(); ctx.ellipse(cx, cy, R0 * (1 - k * .06), R0 * .42 * (1 - k * .06), 0, 0, 7); ctx.stroke();
+  }
+  ctx.restore();
+};
+
+// heat-haze + orange grade over whatever is below
+R.heat = (L, lt) => {
+  const k = fade(lt, L.dur, L.fi ?? .3, L.fo ?? .3) * (L.amt ?? 1);
+  tctx.clearRect(0, 0, W, H); tctx.drawImage(cv, 0, 0);
+  ctx.save();
+  for (let y = 0; y < H; y += 24) { // wobble horizontal strips
+    const dx = Math.sin(y * .05 + lt * 9) * 5 * k;
+    ctx.drawImage(tmp, 0, y, W, 24, dx, y, W, 24);
+  }
+  ctx.globalCompositeOperation = 'overlay'; ctx.globalAlpha = .35 * k;
+  ctx.fillStyle = '#ff5a00'; ctx.fillRect(0, 0, W, H);
   ctx.restore();
 };
 

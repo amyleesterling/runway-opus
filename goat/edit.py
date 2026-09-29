@@ -66,6 +66,19 @@ def VO(name, start, gain=0.0, fx=None, maxgap=None):
     return t - maxgap - start, out
 
 
+def FX(clip, t, dur, alpha=1.0, **kw):
+    """Composite a Runway fire plate (shot on black) with screen blending."""
+    kw.setdefault("grade", {"con": 1.4, "bri": 1.05, "sat": 1.2})
+    V(clip, t, dur, blend="screen", alpha=alpha, **kw)
+
+
+def BOOM(t, big=1.0, x=None, y=None):
+    """Fireball + shockwave + audio for an explosion beat."""
+    FX("fx_fireball", t, 2.4, kb={"z0": 1.1 * big, "z1": 1.4 * big}, fo=.8)
+    G("shock", t, .9, **({"x": x} if x else {}), **({"y": y} if y else {}))
+    S("ignite", t, -2); S("boom", t, -4)
+
+
 def grade_vintage():
     return {"sepia": .35, "sat": .85, "con": 1.1}
 
@@ -78,6 +91,7 @@ V("open", 0, 8.0, kb={"z0": 1.0, "z1": 1.07}, fi=1.0)
 G("particles", 0, 8.0, kind="snow", n=120, alpha=.5)
 G("vignette", 0, 8.0, amt=.6)
 G("grad", 0.6, 7.2, fi=.8, fo=.6)
+G("caption", .4, 3.4, text="@amyleesterling  presents", font="500 34px Inter5", x=960, y=120, fill="#f3e3c0", ls="8px", fi=.8, fo=.8)
 G("quote", 1.0, 6.6, y=800, fo=.6, lines=[
     {"text": "“The goat that is built will be burned.", "t": 0},
     {"text": "The goat that is burned will be built.”", "t": 1.4},
@@ -110,7 +124,8 @@ words = [
     (s1[3][0] + .05, "AND EVERY YEAR...", "#fff", 2),
     (s1[4][0] + .05, "SWEDEN TRIES TO", "#fff", -3), (s1[4][0] + .8, "DESTROY IT!", "#ff2a2a", 4)]
 G("beast", B, bounds[-1] - B, words=[{"t": t - B, "text": w, "fill": f, "rot": r, "size": 170} for t, w, f, r in words])
-S("boom", s1[4][0] + .8, -5)
+BOOM(s1[4][0] + .8)
+G("fire", s1[4][0] + .8, bounds[-1] - s1[4][0] - .8, h=520, fi=.2)
 G("rgbsplit", s1[4][0] + .8, .5, amt=18)
 T = bounds[-1]
 
@@ -126,6 +141,10 @@ for i, (c, w, f) in enumerate(seq):
     G("flash", st, .12, color="#fff", alpha=.5)
 cst = s2[5][0] - .05
 V("burning", cst, 3.2, from_=2.0, kb={"z0": 1.3, "z1": 1.5}, grade={"sat": 1.2, "bri": .45, "blur": 3}, shake={"amp": 6})
+for dx in (-.34, 0, .34):
+    FX("fx_flamewall", cst + .9, 2.3, kb={"z0": 1.15, "x0": dx, "y0": .12}, fi=.15, fo=.4)
+G("fire", cst + .9, 2.3, h=600, size=90, fi=.1)
+G("shock", cst + 1.0, 1.0, y=470)
 G("counter", cst, 3.2, **{"from": 0, "to": 43, "t0": 0, "t1": 1.0, "label": "TIMES DESTROYED", "y": 470})
 S("counter", cst, -8)
 S("register", cst + 1.0, -4)
@@ -138,9 +157,13 @@ T = cst + 3.2
 
 # ---- C. TITLE --------------------------------------------------------
 C = T
-G("solid", C, 4.0, color="#000")
 G("particles", C, 4.0, kind="embers", n=260, fi=.05)
-G("title", C, 4.0)
+V("fire_title", C, 4.0, speed=.85, grade={"con": 1.15, "sat": 1.2}, kb={"z0": .8, "z1": .86, "y0": -.07})
+FX("fx_embers", C, 4.0, alpha=.8)
+G("fire", C, 4.0, h=300, size=60, fi=.3, intensity=.8)
+G("caption", C + .8, 3.0, text="Greatest Of All Tinder", font="italic 600 70px Cormorant", y=880, fill="#ffe9c4", fi=.5, fo=.4)
+G("caption", C + 1.3, 2.5, text="A TRUE STORY  ·  GÄVLE, SWEDEN  ·  1966 – 2025", font="500 28px Inter5", y=960, fill="#e6d2b0", ls="10px", fi=.5, fo=.4)
+G("shock", C, .8)
 G("zoomblur", C, .5, amt=1.4)
 S("braam", C, -2)
 S("ignite", C, -6)
@@ -174,12 +197,13 @@ S("scratch", E - .1, -6)
 
 def entry(year, clip, vo, lower, grade=None, kb=None, speed=1.0, from_=0.0, extra=None, tail=.45):
     st = T
-    G("yearSlam", st, .75, year=year)
     V(clip, st, 99, from_=from_, speed=speed, kb=kb or {"z0": 1.05, "z1": 1.18}, grade=grade or {"sat": 1.2})
     LAYERS[-1]["_open"] = True
     S("boom", st, -9)
     S("whoosh", st - .08, -8)
     G("flash", st, .15, color="#fff", alpha=.6)
+    FX("fx_fireball", st - .05, 1.1, alpha=.45 if year == 1973 else .7, kb={"z0": 1.6}, fo=.4)
+    G("yearSlam", st, .75, year=year)
     Lv, sv = VO(vo, st + .1)
     ln = Lv + .1 + tail
     if lower:
@@ -210,7 +234,7 @@ S("crash", st + .35, -3); G("zoomblur", st + .4, .4)
 T = st + ln + .2; close_open(T)
 # 2001 — court
 st = T
-G("yearSlam", st, .75, year=2001); S("boom", st, -9); S("whoosh", st - .08, -8)
+FX("fx_fireball", st - .05, 1.1, alpha=.7, kb={"z0": 1.6}, fo=.4); G("yearSlam", st, .75, year=2001); S("boom", st, -9); S("whoosh", st - .08, -8)
 L01, s01 = VO("log_2001", st + .1)
 L01b, s01b = VO("log_2001b", st + .1 + L01 + .35)
 en = st + .1 + L01 + .35 + L01b + .6
@@ -226,7 +250,7 @@ G("caption", st + .9, en - st - .9, text="THE TOURIST", font="800 64px Inter", x
 T = en
 # 2010 — heist
 st = T
-G("yearSlam", st, .75, year=2010); S("boom", st, -9); S("whoosh", st - .08, -8)
+FX("fx_fireball", st - .05, 1.1, alpha=.7, kb={"z0": 1.6}, fo=.4); G("yearSlam", st, .75, year=2010); S("boom", st, -9); S("whoosh", st - .08, -8)
 L10, s10 = VO("log_2010", st + .1)
 t_fail = st + .1 + L10 + .3
 L10b, s10b = VO("log_2010b", t_fail + .1)
@@ -245,7 +269,7 @@ S("buzzer", t_fail + .1, -6); S("stamp", t_fail + .15, -2)
 T = en
 # 2012 — tweet
 st = T
-G("yearSlam", st, .75, year=2012); S("boom", st, -9); S("whoosh", st - .08, -8)
+FX("fx_fireball", st - .05, 1.1, alpha=.7, kb={"z0": 1.6}, fo=.4); G("yearSlam", st, .75, year=2012); S("boom", st, -9); S("whoosh", st - .08, -8)
 L12, s12 = VO("log_2012", st + .1)
 t_fire = st + .1 + L12 + .15
 V("open", st, t_fire - st, from_=4, speed=.5, kb={"z0": 1.3, "z1": 1.4}, grade={"bri": .35, "blur": 5})
@@ -254,13 +278,14 @@ S("tweet", s12[1][0] + .8, -6)
 S("clock", s12[2][0] - .2, -8, dur=2.6, fo=.2)
 V("burning", t_fire, 2.6, from_=2.5, kb={"z0": 1.25, "z1": 1.1}, grade={"sat": 1.5, "con": 1.2}, shake={"amp": 14, "decay": 2})
 G("flash", t_fire, .3, color="#fff")
+BOOM(t_fire, big=1.2)
 G("caption", t_fire + .1, 2.5, text="23:56", font="170px Anton", x=1500, y=220, fill="#ff2a2a", pop=True)
 G("particles", t_fire, 2.6, kind="embers", n=200)
 S("ignite", t_fire, 0); S("fire", t_fire, -8, dur=2.6, fo=.5)
 T = t_fire + 2.6
 # 2016 — birthday
 st = T
-G("yearSlam", st, .75, year=2016); S("boom", st, -9); S("whoosh", st - .08, -8)
+FX("fx_fireball", st - .05, 1.1, alpha=.4, kb={"z0": 1.6}, fo=.4); G("yearSlam", st, .75, year=2016); S("boom", st, -9); S("whoosh", st - .08, -8)
 L16, s16 = VO("log_2016", st + .1)
 t_b = s16[2][0] - .05
 V("y2016", st, t_b - st, kb={"z0": 1.05, "z1": 1.15}, grade={"sat": 1.3})
@@ -269,6 +294,9 @@ G("lower", st + .8, t_b - st - .8, tag="27 NOV 2016", title="50th BIRTHDAY PARTY
 S("party", st + .9, -5); S("crowd_cheer", st + .5, -14, dur=t_b - st)
 en = s16[-1][1] + 1.0
 V("burning", t_b, en - t_b, from_=1, kb={"z0": 1.1, "z1": 1.35}, grade={"sat": 1.4, "con": 1.2}, shake={"amp": 10}, punch=[0, s16[3][0] - t_b, s16[4][0] - t_b])
+for w_ in s16[2:]:
+    FX("fx_fireball", w_[0] - .05, 1.4, alpha=.9, kb={"z0": 1.3}, fo=.5)
+G("fire", t_b, en - t_b, h=560, size=85, fi=.1)
 G("beast", t_b, en - t_b, words=[{"t": s16[2][0] - t_b, "text": "BURNED.", "fill": "#ff2a2a", "rot": -4, "size": 200},
                                   {"t": s16[3][0] - t_b, "text": "SAME.", "fill": "#fff", "rot": 3, "size": 200},
                                   {"t": s16[4][0] - t_b, "text": "NIGHT.", "fill": "#ffe600", "rot": -2, "size": 220}])
@@ -332,6 +360,7 @@ T += SC
 # arrow slow-mo
 Ar = T
 V("arrow", Ar, 5.0, speed=.8, kb={"z0": 1.0, "z1": 1.25}, grade={"sat": 1.35, "con": 1.1})
+FX("fx_embers", Ar, 5.0, alpha=.7, speed=.8)
 S("arrow", Ar, -2); S("riser", Ar + 1.0, -8)
 G("particles", Ar, 5.0, kind="snow", n=120, alpha=.5)
 M("m_epic", Ar, 18.0, gain=-10, fi=.2, fo=1.5, trim=8.0)
@@ -340,7 +369,12 @@ T = Ar + 5.0
 Im = T
 Lp, sp = VO("santa_pay", Im + .1, gain=2)
 V("impact", Im, 8.0, kb={"z0": 1.2, "z1": 1.0}, grade={"sat": 1.45, "con": 1.15}, shake={"amp": 26, "decay": 1.2})
-G("flash", Im, .45, color="#fff")
+G("flash", Im, .3, color="#fff", alpha=.5)
+BOOM(Im, big=1.3)
+FX("fx_fireball", Im + .5, 2.4, alpha=.5, kb={"z0": 2.0, "x0": -.25}, fo=.8)
+FX("fx_fireball", Im + .8, 2.4, alpha=.5, kb={"z0": 1.8, "x0": .28}, fo=.8)
+G("fire", Im, 8.0, h=640, size=100, fi=.05)
+G("heat", Im + .3, 3.2, amt=.8)
 G("zoomblur", Im, .8, amt=2)
 G("rgbsplit", Im, .9, amt=24)
 G("particles", Im, 1.6, kind="sparks", n=220, fi=0)
@@ -370,6 +404,9 @@ for i in (1, 2, 4, 5):
     S("ding", sc[i][0] + .1, -8)
 G("beast", I0, en - I0, words=[{"t": sc[-1][0] - I0, "text": "4 YEARS UNDEFEATED", "fill": "#ffd400", "size": 150, "y": 800, "hold": 9}])
 S("crowd_cheer", sc[-1][0], -6)
+FX("fx_burst", sc[-1][0] - .1, en - sc[-1][0] + .1, fo=.4)
+FX("fx_shockwave", sc[-1][0] - .1, 2.0, alpha=.8, fo=.5)
+S("ignite", sc[-1][0], -4)
 M("m_triumph", I0, en - I0 + 9.6, gain=-9, fi=.2, fo=1.0)
 T = en
 Tg = T
@@ -428,18 +465,22 @@ K = T
 Kd = 19.0
 V("triumph", K, Kd, speed=.3, grade={"bri": .3, "blur": 6, "sat": 1.2}, fi=.5)
 G("particles", K, Kd, kind="confetti", n=60, alpha=.5)
-rows = [{"text": "THE G.O.A.T.", "big": True}, {"gap": 10},
+rows = [{"text": "AN  @amyleesterling  PRODUCTION", "head": True}, {"gap": 20}, {"text": "THE G.O.A.T.", "big": True}, {"gap": 10},
         {"text": "60 goats built.  43 destroyed or damaged."},
         {"text": "Every event in this film really happened.*"},
         {"text": "*Dialogue dramatised. Santa's tactical vest unconfirmed.", "head": True}, {"gap": 90},
         {"text": "STARRING", "head": True}, {"text": "The Gävle Goat  as itself"}, {"gap": 40},
         {"text": "ALSO STARRING", "head": True}, {"text": "Santa Claus  &  The Gingerbread Man  (allegedly)"},
         {"text": "One Volvo Amazon"}, {"text": "Several hundred jackdaws"}, {"text": "Storm Johannes"}, {"gap": 40},
-        {"text": "WRITTEN, DIRECTED, ANIMATED & EDITED BY", "head": True}, {"text": "Claude"}, {"gap": 40},
-        {"text": "EXECUTIVE PRODUCER", "head": True}, {"text": "The human who paid for the credits"}, {"gap": 40},
+        {"text": "WRITTEN, DIRECTED, ANIMATED & EDITED BY", "head": True}, {"text": "Claude  “The Goatfather”"}, {"gap": 40},
+        {"text": "EXECUTIVE PRODUCER  &  CHIEF ARSONIST OF CREDITS", "head": True}, {"text": "@amyleesterling"}, {"gap": 40},
         {"text": "IMAGES · VIDEO · VOICES · SOUND · SCORE", "head": True},
         {"text": "Runway API — Gemini Image 3 Pro · Veo 3.1 · Gen-4.5"}, {"text": "ElevenLabs v3 · ElevenLabs SFX · Seed Audio"}, {"gap": 40},
         {"text": "NO GOATS WERE HARMED IN THE MAKING OF THIS FILM", "head": True}, {"text": "(by us)"}]
+G("fire", K, Kd, h=380, size=70, intensity=.75, fi=1.0, fo=1.0)
+FX("fx_embers", K, 6.0, alpha=.6, fo=1.0)
+FX("fx_embers", K + 6.0, 6.0, alpha=.6, fi=1.0, fo=1.0)
+FX("fx_embers", K + 12.0, Kd - 12.0, alpha=.6, fi=1.0, fo=1.0)
 G("credits", K, Kd, rows=rows, speed=150)
 M("m_credits", K, Kd, gain=-8, fi=.3, fo=1.5)
 T = K + Kd
@@ -467,10 +508,15 @@ Lo, so = VO("hype_outro", T + .3)
 G("beast", T, 4.2, words=[{"t": .3, "text": "IT WILL BE REBUILT.", "fill": "#fff", "size": 120, "y": 440, "hold": 9},
                           {"t": so[-1][0] - T, "text": "IT ALWAYS IS.", "fill": "#ffb300", "size": 150, "y": 620, "hold": 9}])
 S("braam", so[-1][0], -6)
+G("fire", T, 4.2, h=420, size=75, fi=.5, intensity=.9)
+BOOM(so[-1][0], big=.9)
 T += 4.2
-G("solid", T, 4.0, color="#000")
 G("particles", T, 4.0, kind="embers", n=260, fi=.05)
-G("title", T, 4.0)
+V("fire_title", T, 4.0, speed=.85, grade={"con": 1.15, "sat": 1.2}, kb={"z0": .8, "z1": .86, "y0": -.07}, fo=.8)
+for dx in (-.34, 0, .34):
+    FX("fx_flamewall", T, 4.0, alpha=.6, kb={"z0": 1.1, "x0": dx, "y0": .34}, fo=.8)
+G("caption", T + .6, 3.2, text="Greatest Of All Tinder", font="italic 600 70px Cormorant", y=880, fill="#ffe9c4", fi=.5, fo=.6)
+G("caption", T + 1.0, 2.8, text="Written & Directed by Claude “The Goatfather”   ·   Produced by @amyleesterling", font="500 28px Inter5", y=960, fill="#e6d2b0", ls="4px", fi=.5, fo=.6)
 G("zoomblur", T, .5, amt=1.4)
 S("ignite", T, -6)
 T += 4.0
@@ -482,6 +528,15 @@ if __name__ == "__main__":
     for L in LAYERS:
         if "from_" in L:
             L["from"] = L.pop("from_")
+    def z(L):  # footage < fire fx < graphics/text < post effects
+        if L["type"] in ("video", "still"):
+            return 1 if L.get("blend") else 0
+        if L["type"] in ("particles", "fire", "shock", "heat"):
+            return 1
+        if L["type"] in ("zoomblur", "rgbsplit", "flash", "whip"):
+            return 3
+        return 2
+    LAYERS.sort(key=z)
     tl = {"fps": FPS, "dur": TOTAL, "clips": clipinfo(), "layers": LAYERS}
     pathlib.Path("render/timeline.json").write_text(json.dumps(tl))
     print(f"timeline: {TOTAL:.1f}s, {len(LAYERS)} layers, {len(AUDIO)} audio cues")
