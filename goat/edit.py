@@ -1,4 +1,4 @@
-"""THE G.O.A.T. — v3 edit (90-second re-cut: every clip used once, motion-graphics explainer). Builds render/timeline.json (picture) and media/mix.wav (sound).
+"""THE G.O.A.T. — v4 edit (Norse-myth opening, satirical unmasking + Naruto-run finale). Builds render/timeline.json (picture) and media/mix.wav (sound).
 
 Every sequence is laid out on a running cursor and synced to measured VO phrase timings (media/vo.json).
 """
@@ -87,6 +87,7 @@ def grade_vintage():
 
 T = 0.0
 TIGHT = .35   # max pause inside a VO line: keeps the jokes moving
+REVEAL = 3.6  # length of the masked build-up before the smash-cut reveal
 
 
 def wipe(t, dir=1):
@@ -94,33 +95,59 @@ def wipe(t, dir=1):
     S("whoosh2", t - .3, -6)
 
 
-# ---- A. EXPLAINER: why is there a goat? (no VO, polka) ------------------
-M("m_credits", 0, 12.1, gain=-9, fi=.2, fo=.05)
-V("ink", 0, 5.0, speed=.6, kb={"z0": 1.0, "z1": 1.12}, fi=.4)
-G("beast", 0, 5.0, words=[{"t": .25, "text": "IN SWEDEN,", "fill": "#fff", "size": 120, "y": 250, "x": 1350, "hold": 9, "rot": -3},
-                          {"t": 1.1, "text": "CHRISTMAS HAS A GOAT.", "fill": "#ffd400", "size": 110, "y": 400, "x": 1250, "hold": 9, "rot": 2}])
-S("whoosh", .2, -8); S("whoosh", 1.05, -8)
-G("lower", 2.3, 2.7, tag="TRADITION", title="THE YULE GOAT", sub="Straw. Centuries old. (Thor's chariot was pulled by goats.)")
-wipe(5.0)
-V("open", 5.0, 8.1, kb={"z0": 1.0, "z1": 1.08})
-G("caption", 5.2, 3.0, text="1966: THE TOWN OF GÄVLE BUILDS A BIG ONE.", font="800 54px Inter", x=80, y=110, align="left", fi=.2)
-G("ruler", 5.6, 4.0, x=1420, y0=930, y1=140, metres=13, items=[
+# ---- A0. THE MYTH: why a goat? (no VO, epic music, kinetic captions) ------
+M("m_epic", 0, 13.9, gain=-11, fi=.3, fo=.15)
+V("myth_chariot", 0, 4.2, kb={"z0": 1.12, "z1": 1.3, "y0": .02}, fi=.3)
+G("particles", 0, 4.2, kind="snow", n=60, alpha=.3)
+G("lower", .4, 3.8, tag="NORSE MYTH · ~1,000 YEARS AGO", title="THE THUNDER GOD'S RIDE", sub="a chariot pulled by two goats: Tanngrisnir & Tanngnjóstr")
+S("boom", 0, -8); S("whoosh2", .3, -8)
+wipe(4.2)
+V("myth_feast", 4.2, 3.7, kb={"z0": 1.0, "z1": 1.15, "x0": .03})
+G("beast", 4.2, 3.7, words=[{"t": .35, "text": "EVERY NIGHT,", "fill": "#fff", "size": 120, "y": 200, "rot": -3, "hold": 9},
+                            {"t": 1.2, "text": "HE ATE THEM.", "fill": "#ff2a2a", "size": 160, "y": 360, "rot": 3, "hold": 9}])
+S("gulp", 5.5, -2)
+V("myth_rise", 7.9, 4.2, kb={"z0": 1.05, "z1": 1.2}, fi=.15)
+G("flash", 7.9, .3, color="#ffe9a8", alpha=.6)
+G("beast", 7.9, 4.2, words=[{"t": .3, "text": "EVERY MORNING,", "fill": "#fff", "size": 110, "y": 180, "rot": -2, "hold": 9},
+                            {"t": 1.1, "text": "HE RESURRECTED THEM.", "fill": "#ffd400", "size": 120, "y": 320, "rot": 2, "hold": 9}])
+S("heavenly", 7.95, -6)
+G("caption", 10.3, 1.8, text="(one came back with a limp)", font="italic 600 54px Cormorant", x=1350, y=900, fill="#fff", fi=.15)
+S("ding", 10.4, -10)
+# the thesis card
+G("solid", 12.1, 1.8, color="#0b0806")
+G("particles", 12.1, 1.8, kind="embers", n=90, alpha=.6)
+G("beast", 12.1, 1.8, words=[{"t": .05, "text": "A GOAT THAT DIES", "fill": "#fff", "size": 120, "y": 420, "hold": 9, "rot": -2},
+                             {"t": .55, "text": "AND COMES BACK.", "fill": "#ff8a1f", "size": 130, "y": 580, "hold": 9, "rot": 2}])
+S("boom", 12.1, -8); S("boom", 12.65, -8)
+G("stamp", 13.1, .8, text="REMEMBER THIS", x=1500, y=820, size=60, rot=-8, color="#ffd400")
+# Swedish folk tradition
+wipe(13.9, -1)
+M("m_credits", 13.9, 15.8, gain=-9, fi=.05, fo=.05)
+V("myth_julbock", 13.9, 3.6, kb={"z0": 1.15, "z1": 1.3})
+G("caption", 14.1, 3.3, text="CENTURIES LATER, IN SWEDEN:", font="800 54px Inter", x=80, y=110, align="left", fi=.2)
+G("lower", 14.5, 3.0, tag="JULBOCK", title="THE YULE GOAT", sub="It delivered the Christmas presents. Before Santa took the job.")
+S("whoosh", 14.0, -8)
+O = 17.5 - 5.0   # the 1966 explainer runs 12.5 s later than in v3
+wipe(O + 5.0)
+V("open", O + 5.0, 8.1, kb={"z0": 1.0, "z1": 1.08})
+G("caption", O + 5.2, 3.0, text="1966: THE TOWN OF GÄVLE BUILDS A BIG ONE.", font="800 54px Inter", x=80, y=110, align="left", fi=.2)
+G("ruler", O + 5.6, 4.0, x=1420, y0=930, y1=140, metres=13, items=[
     {"kind": "giraffe", "m": 5.5, "x": 1620, "label": "GIRAFFE", "t": 1.2},
     {"kind": "human", "m": 1.8, "x": 1800, "label": "YOU", "t": 1.6}])
-S("riser", 5.6, -12)
-G("stamp", 8.2, 1.4, text="3 TONNES\nOF STRAW", x=420, y=520, size=90, rot=-8, color="#ffd400")
-S("stamp", 8.2, -3)
-G("solid", 9.6, 3.5, color="#000", alpha=.55, fi=.2)
-G("caption", 9.7, 3.4, text="DESIGNED BY:", font="700 60px Mono", y=300, fi=.1)
-G("stamp", 10.4, 2.7, text="THE FIRE CHIEF'S\nBROTHER", y=560, size=120, rot=-6, color="#ff2a2a")
-S("stamp", 10.4, 0)
-G("beast", 11.4, 1.7, words=[{"t": 0, "text": "?!", "fill": "#ffd400", "size": 200, "x": 1600, "y": 380, "rot": 10, "hold": 9}])
-S("ding", 11.4, -8)
+S("riser", O + 5.6, -12)
+G("stamp", O + 8.2, 1.4, text="3 TONNES\nOF STRAW", x=420, y=520, size=90, rot=-8, color="#ffd400")
+S("stamp", O + 8.2, -3)
+G("solid", O + 9.6, 3.5, color="#000", alpha=.55, fi=.2)
+G("caption", O + 9.7, 3.4, text="DESIGNED BY:", font="700 60px Mono", y=300, fi=.1)
+G("stamp", O + 10.4, 2.7, text="THE FIRE CHIEF'S\nBROTHER", y=560, size=120, rot=-6, color="#ff2a2a")
+S("stamp", O + 10.4, 0)
+G("beast", O + 11.4, 1.7, words=[{"t": 0, "text": "?!", "fill": "#ffd400", "size": 200, "x": 1600, "y": 380, "rot": 10, "hold": 9}])
+S("ding", O + 11.4, -8)
 # music stops dead. beat.
-G("caption", 12.3, 1.2, text="what could possibly go wrong", font="700 36px Mono", y=900, fill="#ddd", ls="4px")
-S("snow_amb", 12.1, -10, dur=1.5)
-S("match", 13.05, 0)
-T = 13.6
+G("caption", O + 12.3, 1.2, text="what could possibly go wrong", font="700 36px Mono", y=900, fill="#ddd", ls="4px")
+S("snow_amb", O + 12.1, -10, dur=1.5)
+S("match", O + 13.05, 0)
+T = O + 13.6
 # SMASH: it burned.
 V("y1966", T, 4.0, kb={"z0": 1.15, "z1": 1.3}, grade=grade_vintage(), shake={"amp": 10, "decay": 1.5})
 FX("fx_fireball", T, 2.4, kb={"z0": 1.3, "z1": 1.6}, fo=.8)
@@ -178,21 +205,6 @@ en = st + .15 + L + .6
 V("y1976", st, en - st, speed=.7, kb={"z0": 1.05, "z1": 1.2}, grade=grade_vintage(), shake={"amp": 12, "decay": 1.2})
 S("crash", st + .35, -3); G("zoomblur", st + .4, .4)
 G("lower", st + .8, en - st - .8, tag="1976", title="HIT BY A VOLVO", sub="Volvo Amazon · hind legs")
-T = en
-# 2001 — the tourist and the lighter
-st = T; slam(2001, st)
-L1, s1 = VO("log_2001", st + .15, maxgap=TIGHT)
-L2, s2 = VO("log_2001b", st + .15 + L1 + .3, maxgap=TIGHT)
-en = st + .15 + L1 + .3 + L2 + .9
-V("burning", st, en - st, speed=.6, kb={"z0": 1.2, "z1": 1.3, "x0": -.2}, grade={"bri": .5, "blur": 4, "sat": 1.3})
-G("caption", st + .9, en - st - .9, text="2001", font="140px Anton", x=330, y=300, fill="#ffe600", fi=.2)
-G("caption", st + .9, en - st - .9, text="THE TOURIST", font="800 64px Inter", x=330, y=410, fi=.2)
-G("verdict", st + .5, en - st - .5, rows=[["DEFENDANT", "American tourist, 51\nCleveland, Ohio"],
-                                          ["DEFENCE", "“I thought it was a legal\ntradition.”"],
-                                          ["SENTENCE", "Jail + SEK 100,000 damages\n(went home without paying)"],
-                                          ["ALSO", "Lighter CONFISCATED."]])
-G("stamp", s2[-1][0] + .5, en - s2[-1][0] - .5, text="NOT ABLE TO\nHANDLE IT", x=1250, y=640, size=100, rot=-14)
-S("stamp", s2[-1][0] + .5, -1)
 T = en
 # 2016 — birthday party catches fire
 st = T; slam(2016, st)
@@ -310,6 +322,37 @@ Lf, sf = VO("goat_fine", T + .1, gain=-2, fx="lowpass=f=900,volume=1.6")
 G("subs", T - .1, 2.0, font="italic 600 60px Cormorant", lines=[{"t0": .1, "t1": 1.9, "text": "[muffled, face-down]   ...I'm fine."}])
 V("storm", P + 6.0, T + 1.9 - (P + 6.0), from_=5.95)  # hold on the faceplant (same shot, not a reuse)
 T += 1.9
+
+# ---- G2. THE REVEAL (satirical puppets) + NARUTO RUN ---------------------
+wipe(T)
+R0 = T
+V("unmask_pre", R0, REVEAL, kb={"z0": 1.0, "z1": 1.12})
+G("news", R0, REVEAL - .1, tag="BREAKING", headline="2005 GOAT ARSON: SUSPECTS FINALLY UNMASKED",
+  ticker="SATIRE ALERT  •  NO FORMER PRESIDENTS WERE INVOLVED IN ANY GOAT FIRES  •  GOAT STILL FACE-DOWN IN SNOW  •  NORTH POLE RELIEVED")
+S("riser", R0, -8, dur=REVEAL)
+RV = R0 + REVEAL
+# continuous unmasking: a Hailuo clip of the puppets putting their disguises ON, played in reverse
+V("unmask_rev", RV, 3.6, from_=3.0, kb={"z0": 1.05, "z1": 1.15})
+G("flash", RV, .15, color="#fff", alpha=.5); S("whoosh", RV - .1, -4)
+HIT = RV + 1.5   # gingerbread head comes off / beard comes down
+S("scratch", HIT - .05, -3); S("braam", HIT, -2); S("crowd_gasp", HIT + .2, -6)
+G("zoomblur", HIT, .6, amt=1.2)
+G("beast", HIT, 3.6 + 2.6 - 1.5, words=[{"t": .1, "text": "WHAT?!", "fill": "#ffd400", "size": 190, "y": 180, "rot": -4, "hold": 1.5}])
+V("unmask_post", RV + 3.6, 2.6, kb={"z0": 1.15, "z1": 1.25}, shake={"amp": 8, "decay": 3})
+G("stamp", HIT + 1.7, RV + 6.2 - HIT - 1.7, text="SATIRE.\nOBVIOUSLY.", x=960, y=880, size=80, rot=-6, color="#ff2a2a")
+S("stamp", HIT + 1.7, -2)
+G("caption", HIT + .4, RV + 6.2 - HIT - .4, text="satirical puppets · not the real people", font="500 28px Inter5", x=960, y=1050, fill="#ddd", ls="3px")
+T = RV + 6.2
+N0 = T
+V("naruto", N0, 6.5, kb={"z0": 1.0, "z1": 1.1}, shake={"amp": 5})
+G("speedlines", N0, 5.2, fo=.6)
+G("beast", N0, 5.4, words=[{"t": .2, "text": "THEY'RE GETTING AWAY!", "fill": "#fff", "size": 120, "y": 170, "rot": -3, "hold": 2.2},
+                           {"t": 2.6, "text": "NARUTO RUN!!!", "fill": "#ff8a1f", "size": 170, "y": 180, "rot": 3, "hold": 9}])
+M("m_hype", N0, 6.5, gain=-8, fi=.05, fo=.6, trim=12.0)
+S("whoosh", N0 + .1, -3); S("whoosh2", N0 + 1.2, -4); S("whoosh", N0 + 2.4, -4); S("whoosh2", N0 + 3.6, -3)
+G("stamp", N0 + 5.3, 1.2, text="CASE STATUS:\nSTILL UNSOLVED", x=1450, y=860, size=70, rot=-8, color="#ffd400")
+S("stamp", N0 + 5.3, -4)
+T = N0 + 6.5
 
 # ---- H. END CARD ---------------------------------------------------------
 Z = T
