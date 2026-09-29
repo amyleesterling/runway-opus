@@ -738,6 +738,29 @@ R.wipe = (L, lt) => {
   ctx.restore();
 };
 
+// anime speed lines: streaks rushing left + radial focus lines at the edges
+R.speedlines = (L, lt) => {
+  const a = fade(lt, L.dur, .15, .3);
+  ctx.save(); ctx.globalAlpha = a;
+  for (let i = 0; i < (L.n || 70); i++) {
+    const y = rnd(i, 31) * H, len = 200 + rnd(i, 32) * 700, sp = 2500 + rnd(i, 33) * 2500;
+    const x = W - ((lt * sp + rnd(i, 34) * (W + len)) % (W + len));
+    ctx.strokeStyle = `rgba(255,255,255,${.25 + rnd(i, 35) * .45})`; ctx.lineWidth = 1 + rnd(i, 36) * 4;
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + len, y); ctx.stroke();
+  }
+  ctx.fillStyle = 'rgba(255,255,255,.55)';
+  for (let i = 0; i < 90; i++) { // radial wedges around the frame edge, flickering
+    const ang = rnd(i, 41 + Math.floor(lt * 12)) * Math.PI * 2, w = .004 + rnd(i, 42) * .01;
+    const r0 = 620 + rnd(i, 43 + Math.floor(lt * 12)) * 200, r1 = 1300;
+    ctx.beginPath();
+    ctx.moveTo(W / 2 + Math.cos(ang - w) * r1, H / 2 + Math.sin(ang - w) * r1);
+    ctx.lineTo(W / 2 + Math.cos(ang) * r0, H / 2 + Math.sin(ang) * r0);
+    ctx.lineTo(W / 2 + Math.cos(ang + w) * r1, H / 2 + Math.sin(ang + w) * r1);
+    ctx.fill();
+  }
+  ctx.restore();
+};
+
 // ---------- XKCD "What If" ----------
 function stick(x, y, s, seed, o = {}) {
   ctx.save(); ctx.translate(x, y); ctx.scale(s, s); ctx.lineWidth = 4 / s * s; ctx.strokeStyle = '#111'; ctx.lineCap = 'round';
