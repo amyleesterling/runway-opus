@@ -101,3 +101,22 @@ def narrate(voice, accent, names=None):
                                       "promptText": f"[strong {accent} accent] [excited] " + NARRATION[n], "style": 0.9},
                    f"media/vo6/{n}.mp3", "vo6_" + n)
         print("ok", n, flush=True)
+
+
+# ---- v9 narration additions (same narrator) ------------------------------------------------------
+NARRATION_V9 = {
+    "g1966b": "Nineteen sixty-six! A little town called Gävle decides: we build a GIANT goat! Thirteen metres tall! "
+              "Designed by... the fire chief's brother! [pause] But then...",
+    "grid2": "Since then... Swedes keep TORCHING the goat! [excited] Forty-three out of sixty! [laughs] Let me tell you about some of them!",
+    "r2012b": "Twenty-twelve! The goat's own Twitter says: feeling good. [pause] Ten minutes later... [shouting] feeling HOT!",
+    "r2015b": "Twenty-fifteen! Police catch a guy running away. Burned face, smells like petrol, holding a lighter. And he says...",
+    "outro2": "This year, Sweden builds the goat again! Will it survive... or become a BONFIRE? [excited] Make your prediction in the comments!",
+}
+
+
+def narrate_v9(voice="Ragnar", accent="Swedish", names=None):
+    for n in names or NARRATION_V9:
+        runway.run("text_to_speech", {"model": "eleven_v3", "voice": {"type": "runway-preset", "presetId": voice},
+                                      "promptText": f"[strong {accent} accent] [excited] " + NARRATION_V9[n], "style": 0.9},
+                   f"media/vo6/{n}.mp3", "vo9_" + n)
+        print("ok", n, flush=True)

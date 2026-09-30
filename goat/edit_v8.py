@@ -1,4 +1,4 @@
-"""THE G.O.A.T. — v9 edit (iterating): map transition, flying Volvo, flossing Gingerbread Man, "feeling hot", poll ending.
+"""THE G.O.A.T. — v8 edit: v6 with a tease ending ("we know who really did it") instead of the unmasking. Builds render/timeline.json + media/mix.wav.
 
 Every sequence is laid out on a running cursor and synced to measured VO phrase timings (media/vo.json).
 """
@@ -106,18 +106,6 @@ def N(name, start, gain=1.0, maxgap=.3, speed=1.2):
     return t - maxgap - start, out
 
 
-def KT(seg, text, y=200, size=110, colors=None, hl=None, dur=None, frac=.75):
-    """Kinetic text: the words of `text` pop in one by one across the phrase `seg` ([start, end] timeline times)."""
-    words = text.split()
-    a, b = seg
-    step = max(.08, (b - a) * frac / max(1, len(words)))
-    ws = [{"t": i * step, "text": w, "fill": (colors or {}).get(i, "#fff"), **({"hl": hl[i]} if hl and i in hl else {})}
-          for i, w in enumerate(words)]
-    G("kinetic", a, dur or (b - a + 1.0), words=ws, y=y, size=size)
-    for i in range(len(words)):
-        S("whoosh", a + i * step, -16)
-
-
 def wipe(t, dir=1):
     G("wipe", t - .3, .6, dir=dir)
     S("whoosh2", t - .3, -6)
@@ -151,7 +139,6 @@ def story(year, clip, line, tag, title, sub, *, speed=1.0, from_=0.0, fire=True,
     return st, en, ph
 
 
-ASHY_Q = 1.0  # when the ashy guy starts his line (set from the clip)
 T = 0.0
 # ---- MYTH -------------------------------------------------------------------------
 M("m_epic", 0, 13.0, gain=-14, fi=.3, fo=.6)
@@ -179,74 +166,47 @@ G("beast", st, en - st, words=[{"t": ph[-1][0] - st - .1, "text": "A GOAT THAT D
                                {"t": ph[-1][0] - st + .9, "text": "AND COMES BACK!", "fill": "#ff8a1f", "size": 130, "y": 340, "rot": 2, "hold": 9}])
 T = en
 
-# ---- 1966: WHERE, WHAT, "BUT THEN..." ---------------------------------------------------------------
+# ---- 1966 -------------------------------------------------------------------------------
 wipe(T)
 st = T
-M("m_montage", st, 30.0, gain=-16, fi=.2, fo=.3)
-L, ph = N("g1966b", st + .2)
-t_goat = ph[3][0] - .1                          # "Thirteen metres tall!"
-G("map", st, t_goat - st, zoomT=1.8, pinT=ph[1][0] - st + .5, geo=json.load(open("render/nordic.json")))
-S("whoosh2", st + .1, -8); S("boom", ph[1][0] + .5, -8)
-G("yearSlam", st + .15, 1.2, year=1966, size=150, y=160, rot=-3)
-KT([ph[2][0], ph[2][1]], "WE BUILD A GIANT GOAT!", y=900, size=100, colors={3: "#ffd400", 4: "#ffd400"})
-V("open", t_goat, ph[6][0] - t_goat, kb={"z0": 1.0, "z1": 1.1})
-G("ruler", t_goat + .1, ph[6][0] - t_goat - .1, x=1420, y0=930, y1=140, metres=13, items=[
-    {"kind": "giraffe", "m": 5.5, "x": 1620, "label": "GIRAFFE", "t": .7}, {"kind": "human", "m": 1.8, "x": 1800, "label": "YOU", "t": 1.0}])
-G("stamp", ph[5][0] - .1, ph[6][0] - ph[5][0] + .1, text="DESIGNED BY:\nTHE FIRE CHIEF'S BROTHER", x=620, y=520, size=70, rot=-6, color="#ff2a2a")
-S("stamp", ph[5][0] - .1, -2)
-# "But then..." — music cuts, slow push in the dark, match strike
-bt = ph[6][0]
-G("solid", bt, 1.6, color="#000", alpha=.7, fi=.2)
-G("kinetic", bt, 1.6, words=[{"t": 0, "text": "BUT"}, {"t": .35, "text": "THEN..."}], y=540, size=170)
-S("snow_amb", bt, -10, dur=1.6); S("match", bt + 1.1, 0)
-t_burn = bt + 1.6
-en = t_burn + 3.4
+M("m_montage", st, 30.0, gain=-16, fi=.2, fo=.8)
+L, ph = N("g1966", st + .2)
+t_burn = ph[-1][0] - .1          # "It burned on New Year's Eve."
+V("open", st, t_burn - st, kb={"z0": 1.0, "z1": 1.1})
+G("ruler", st + .6, min(4.0, t_burn - st - .6), x=1420, y0=930, y1=140, metres=13, items=[
+    {"kind": "giraffe", "m": 5.5, "x": 1620, "label": "GIRAFFE", "t": 1.0}, {"kind": "human", "m": 1.8, "x": 1800, "label": "YOU", "t": 1.3}])
+G("stamp", t_burn - 2.2, 2.1, text="DESIGNED BY:\nTHE FIRE CHIEF'S BROTHER", x=620, y=520, size=70, rot=-6, color="#ff2a2a")
+S("stamp", t_burn - 2.2, -2)
+en = ph[-1][1] + 1.6
 V("y1966", t_burn, en - t_burn, kb={"z0": 1.15, "z1": 1.3}, grade=grade_vintage(), shake={"amp": 10, "decay": 1.5})
-BOOM(t_burn, big=1.3); burn(t_burn, en - t_burn)
+BOOM(t_burn, big=1.2)
+burn(t_burn, en - t_burn)
 G("yearSlam", t_burn + .1, 1.4, year="31 DEC 1966", size=150, y=220)
-G("stamp", t_burn + 1.2, 2.2, text="BURNED.\nYEAR ONE.", x=1450, y=640, size=110, rot=-10)
-S("crowd_gasp", t_burn + .4, -6); S("stamp", t_burn + 1.2, -2)
+S("crowd_gasp", t_burn + .4, -6)
 T = en
 
-# ---- 43: SWEDES KEEP TORCHING THE GOAT ------------------------------------------------------
+# ---- 43 --------------------------------------------------------------------------------
 wipe(T, -1)
 st = T
-L, ph = N("grid2", st + .2)
-en = st + .2 + L + .5
+L, ph = N("grid", st + .2)
+en = st + .2 + L + .6
 G("solid", st, en - st, color="#0b1024")
 G("particles", st, en - st, kind="embers", n=140, alpha=.7)
 import random
 order = random.Random(1966).sample(range(60), 43)
-G("goatgrid", st, en - st, order=order, t0=ph[1][0] - st, t1=ph[2][0] - st + .6)
-KT(ph[1], "SWEDES KEEP TORCHING THE GOAT!", y=960, size=90, colors={3: "#ff3b2f"}, dur=ph[2][0] - ph[1][0])
-S("counter", ph[1][0], -10, dur=ph[2][0] - ph[1][0] + .6); S("register", ph[2][0] + .6, -3); G("shock", ph[2][0] + .6, .8, y=140)
-FX("fx_flamewall", ph[2][0] + .6, en - ph[2][0] - .6, kb={"z0": 1.2, "x0": -.34, "y0": .25}, fi=.1, fo=.3)
-FX("fx_flamewall", ph[2][0] + .6, en - ph[2][0] - .6, kb={"z0": 1.2, "x0": .34, "y0": .25}, fi=.1, fo=.3)
+G("goatgrid", st, en - st, order=order, t0=.3, t1=min(en - st - .5, 3.0))
+S("counter", st + .3, -10, dur=2.7); S("register", st + 3.0, -3); G("shock", st + 3.0, .8, y=140)
 T = en
 
 # ---- THE RAP SHEET (14 destructions) ----------------------------------------------------
 story(1970, "n1970", "r1970", "1970", "6 HOURS", "two drunk teenagers")
 story(1973, "n1973", "r1973", "1973", "STOLEN", "found in a man's back garden", fire=False, grade=grade_vintage())
-st = T
-slam(1976, st)
-L, ph = N("r1976", st + .2)
-en = st + .2 + L + .6
-hit = ph[1][0] + .9                                # the car lands in the goat on "VOLVO!"
-V("volvo_fly", st, hit - st, speed=min(1.0, 1.4 / (hit - st)), kb={"z0": 1.14, "z1": 1.24})
-V("volvo_fly", hit, en - hit, from_=1.4, kb={"z0": 1.24, "z1": 1.12}, shake={"amp": 30, "decay": 1.2})
-BOOM(hit, big=1.5); G("zoomblur", hit, .8, amt=2); G("rgbsplit", hit, .8, amt=22)
-FX("fx_shockwave", hit + .05, 1.8, alpha=.9, fo=.5); burn(hit, en - hit, h=680)
-S("crash", hit - .1, 0); S("braam", hit + .1, -4)
-G("lower", st + .6, hit - st - .6, tag="1976", title="HIT BY A VOLVO", sub="Volvo Amazon · airborne (dramatisation)")
-KT(ph[2], "A SWEDISH GOAT,", y=180, size=110, colors={1: "#ffd400"})
-KT([ph[3][0], ph[3][1]], "KILLED BY A SWEDISH CAR!", y=320, size=110, colors={3: "#ffd400", 4: "#ff3b2f"})
-T = en
+st, en, ph = story(1976, "y1976", "r1976", "1976", "HIT BY A VOLVO", "Volvo Amazon · hind legs", speed=.7, fire=False, grade=grade_vintage())
+S("crash", st + .35, -2); G("zoomblur", st + .4, .4)
 st, en, ph = story(1985, "n1985", "r1985", "1985", "GUARDED BY THE ARMY", "burned anyway")
 G("stamp", ph[-1][0], en - ph[-1][0], text="BURNED\nANYWAY", x=1450, y=300, size=100, rot=-10)
 S("stamp", ph[-1][0], -2)
 st, en, ph = story(2001, "burning", "r2001", "2001", "THE TOURIST", "“I thought it was a tradition”", speed=.6)
-G("bubble", ph[3][0] - .05, ph[5][0] - ph[3][0], text="I THOUGHT IT WAS\nA TRADITION!", x=1250, y=330, size=70, typeD=ph[3][1] - ph[3][0])
-S("gulp", ph[3][0], -12)
 G("stamp", ph[-1][0], en - ph[-1][0], text="NOT A\nTRADITION", x=1400, y=300, size=100, rot=-10)
 S("stamp", ph[-1][0], -2)
 # 2005 — the arrow (Santa now actually aims at the goat)
@@ -256,12 +216,7 @@ slam(2005, st)
 L, ph = N("r2005", st + .2)
 t_arrow = ph[-1][0] - .2
 D = t_arrow - st
-DA = min(1.6, D * .35)
-V("santa_aim", st, DA, kb={"z0": 1.0, "z1": 1.08})                    # drawing the bow, arrow still lit
-V("santa_floss", st + DA, D - DA, speed=min(1.0, 4.8 / (D - DA)), kb={"z0": 1.0, "z1": 1.12})  # arrow away, Gingerbread Man flosses
-FX("fx_embers", st + DA, D - DA, alpha=.5)
-S("arrow", st + DA, -3)
-G("beast", st + DA + .6, D - DA - .6, words=[{"t": 0, "text": "*FLOSSING*", "fill": "#d38b3a", "size": 90, "x": 520, "y": 780, "rot": -8, "hold": 9}])
+V("santa_aim", st, D, speed=min(1.0, 2.3 / D), kb={"z0": 1.0, "z1": 1.15})   # ends on the release, before the goat ignites
 G("news", st + .3, D - .3, tag="2005", headline="SANTA & GINGERBREAD MAN OPEN FIRE",
   ticker="NORTH POLE DENIES INVOLVEMENT  •  GINGERBREAD MAN SEEN WITH BINOCULARS  •  GOAT UNAVAILABLE FOR COMMENT")
 S("bow", t_arrow - .9, 0)
@@ -283,37 +238,22 @@ S("crowd_cheer", Im, -12, dur=3.4)
 M("m_epic", t_arrow - 1.0, 8.0, gain=-10, fi=.3, fo=1.2, trim=8.0)
 T = Im + 3.4
 
-# 2012 — "feeling good" ... "feeling HOT!"
+# 2012 — "feeling good"
 wipe(T, -1)
 st = T
 slam(2012, st)
-L, ph = N("r2012b", st + .2)
-t_later, t_hot = ph[3][0] - .05, ph[4][0] - .05
-V("n2012", st, t_hot - st, kb={"z0": 1.3, "z1": 1.4}, grade={"bri": .35, "blur": 5})
-G("tweet", ph[1][0], t_later - ph[1][0], text="feeling good", time="23:46")
-S("tweet", ph[2][0], -6)
-G("solid", t_later, t_hot - t_later, color="#000", alpha=.6)
-G("kinetic", t_later, t_hot - t_later, words=[{"t": 0, "text": "10"}, {"t": .15, "text": "MINUTES", "fill": "#ffd400"}, {"t": .3, "text": "LATER..."}], y=540, size=150)
-S("clock", t_later, -6, dur=t_hot - t_later)
-en = ph[-1][1] + 2.2
-V("n2012", t_hot, en - t_hot, from_=1.0, kb={"z0": 1.2, "z1": 1.0}, grade={"sat": 1.5, "con": 1.2}, shake={"amp": 16, "decay": 2})
-G("tweet", t_hot, 1.6, text="feeling HOT", time="23:56")
-S("tweet", t_hot, -4)
-BOOM(t_hot + 1.3, big=1.3); burn(t_hot + .2, en - t_hot - .2, h=720)
-G("beast", t_hot + 1.4, en - t_hot - 1.4, words=[{"t": 0, "text": "FIRE!!!", "fill": "#ff2a2a", "size": 260, "hold": 9, "rot": -3}])
+L, ph = N("r2012", st + .2)
+t_fire = ph[-1][0] - .05
+V("n2012", st, t_fire - st, kb={"z0": 1.3, "z1": 1.4}, grade={"bri": .35, "blur": 5})
+G("tweet", st + .5, t_fire - st - .5, text="feeling good", clockT=max(.8, t_fire - st - 2.8), clockD=2.0)
+S("tweet", st + 1.0, -6); S("clock", t_fire - 2.3, -8, dur=2.3)
+en = ph[-1][1] + 1.8
+V("n2012", t_fire, en - t_fire, from_=1.0, kb={"z0": 1.2, "z1": 1.0}, grade={"sat": 1.5, "con": 1.2}, shake={"amp": 16, "decay": 2})
+BOOM(t_fire, big=1.3); burn(t_fire, en - t_fire, h=700)
+G("beast", t_fire, en - t_fire, words=[{"t": .05, "text": "FIRE!!!", "fill": "#ff2a2a", "size": 260, "hold": 9, "rot": -3}])
 T = en
 
-st = T
-slam(2015, st)
-L, ph = N("r2015b", st + .2)
-tq = st + .2 + L + .15
-V("n2015", st, tq - st, kb={"z0": 1.0, "z1": 1.15})
-G("lower", st + .6, tq - st - .6, tag="2015", title="CAUGHT", sub="burned face · smelled of petrol · holding a lighter")
-KT(ph[2], "BURNED FACE. SMELLS LIKE PETROL.", y=180, size=90, colors={1: "#ff8a1f", 4: "#ff8a1f"})
-V("ashy", tq, 4.8, kb={"z0": 1.05, "z1": 1.15})
-A("media/vid/ashy.mp4", tq, 2, dur=4.8, fo=.2)
-G("bubble", tq + ASHY_Q, 4.8 - ASHY_Q, text="THIS WAS AN EXTREMELY\nBAD IDEA!", x=1300, y=260, size=62, typeD=1.4, tailX=-120)
-T = tq + 4.8
+st, en, ph = story(2015, "n2015", "r2015", "2015", "CAUGHT", "burned face · smelled of petrol · holding a lighter", fire=False)
 G("stamp", ph[-1][0] - .3, en - ph[-1][0] + .3, text="“EXTREMELY\nBAD IDEA”", x=1420, y=300, size=90, rot=-8, color="#ffd400")
 S("stamp", ph[-1][0] - .3, -2)
 
@@ -352,29 +292,17 @@ G("beast", R0, TD, words=[{"t": 1.6, "text": "WE KNOW WHO", "fill": "#fff", "siz
 S("boom", R0 + 1.6, -6); S("braam", R0 + 2.5, -3)
 T = R0 + TD
 
-# ---- THE POLL ---------------------------------------------------------------------------------
-wipe(T)
-P0 = T
-L, ph = N("outro2", P0 + .3)
-PD = L + 1.6
-FX("fx_flamewall", P0, PD, alpha=.7, kb={"z0": 1.2, "x0": -.34, "y0": .28}, fi=.2)
-FX("fx_flamewall", P0, PD, alpha=.7, kb={"z0": 1.2, "x0": .34, "y0": .28}, fi=.2)
-G("particles", P0, PD, kind="embers", n=160)
-G("poll", ph[2][0] - .3, P0 + PD - ph[2][0] + .3)
-KT(ph[1], "SWEDEN BUILDS THE GOAT AGAIN!", y=540, size=100, colors={0: "#ffd400"}, dur=ph[2][0] - ph[1][0] - .1)
-S("ding", ph[3][0], -6); S("register", ph[4][0], -8)
-M("m_hype", P0, PD, gain=-13, fi=.2, fo=.6, trim=5.0)
-T = P0 + PD
 # ---- END CARD --------------------------------------------------------------------------------
 Z = T
-ZD = 4.0
+L, ph = N("outro", Z + .4)
+ZD = max(5.0, L + 1.4)
 V("fire_title", Z, ZD, speed=.8, grade={"con": 1.15, "sat": 1.2}, kb={"z0": .8, "z1": .86, "y0": -.07}, fi=.2)
 FX("fx_embers", Z, ZD, alpha=.8)
 for dx in (-.34, 0, .34):
     FX("fx_flamewall", Z, ZD, alpha=.55, kb={"z0": 1.1, "x0": dx, "y0": .34}, fo=.8)
 G("shock", Z, .8); S("ignite", Z, -4)
 M("m_credits", Z, ZD, gain=-12, fi=.3, fo=1.0)
-G("caption", Z + .6, ZD - .6, text="Written & Directed by Claude “The Goatfather”   ·   Produced by @amyleesterling", font="500 30px Inter5", y=960, fill="#e6d2b0", ls="3px", fi=.4, fo=.5)
+G("caption", Z + 1.0, ZD - 1.0, text="Written & Directed by Claude “The Goatfather”   ·   Produced by @amyleesterling", font="500 30px Inter5", y=960, fill="#e6d2b0", ls="3px", fi=.4, fo=.5)
 T += ZD
 
 TOTAL = T

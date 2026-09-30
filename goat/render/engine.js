@@ -445,7 +445,7 @@ R.tweet = (L, lt) => {
   ctx.fillStyle = '#d4202a'; ctx.fillRect(-470, -70, 80, 14);
   ctx.textAlign = 'left'; ctx.fillStyle = '#0f1419'; ctx.font = '800 38px Inter'; ctx.fillText('Gävlebocken', -355, -100);
   ctx.fillStyle = '#1d9bf0'; ctx.beginPath(); ctx.arc(-355 + ctx.measureText('Gävlebocken').width + 26, -112, 15, 0, 7); ctx.fill();
-  ctx.fillStyle = '#536471'; ctx.font = '500 32px Inter5'; ctx.fillText('@Gavlebocken · 23:46', -355, -55);
+  ctx.fillStyle = '#536471'; ctx.font = '500 32px Inter5'; ctx.fillText('@Gavlebocken · ' + (L.time || '23:46'), -355, -55);
   ctx.fillStyle = '#0f1419'; ctx.font = '500 76px Inter5'; ctx.fillText(L.text.slice(0, Math.ceil(L.text.length * clamp((lt - .5) / .6))), -440, 70);
   ctx.restore();
   // clock
@@ -758,6 +758,126 @@ R.speedlines = (L, lt) => {
     ctx.lineTo(W / 2 + Math.cos(ang + w) * r1, H / 2 + Math.sin(ang + w) * r1);
     ctx.fill();
   }
+  ctx.restore();
+};
+
+// ---------- v9 MOTION GRAPHICS ----------
+// animated map: zoom from Scandinavia into Sweden, pin on Gävle, goat pops up
+R.map = (L, lt) => {
+  const D = L.dur, k = eIO(clamp(lt / (L.zoomT || 2.2)));
+  const lon0 = lerp(16, 16.6, k), lat0 = lerp(62.5, 60.9, k), sc = lerp(38, 150, k);  // px per degree lat
+  const cosl = Math.cos(lat0 * Math.PI / 180);
+  const P = (lon, lat) => [W / 2 + (lon - lon0) * sc * cosl, H / 2 - (lat - lat0) * sc];
+  ctx.save();
+  const sea = ctx.createLinearGradient(0, 0, 0, H); sea.addColorStop(0, '#0a1f3d'); sea.addColorStop(1, '#06142a');
+  ctx.fillStyle = sea; ctx.fillRect(0, 0, W, H);
+  // graticule
+  ctx.strokeStyle = 'rgba(120,170,255,.12)'; ctx.lineWidth = 1;
+  for (let lo = 0; lo <= 40; lo += 5) { const a = P(lo, 50), b = P(lo, 75); ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.stroke(); }
+  for (let la = 50; la <= 75; la += 2.5) { const a = P(0, la), b = P(40, la); ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.stroke(); }
+  for (const [code, rings] of Object.entries(L.geo)) {
+    const se = code === 'SE';
+    const hl = se ? clamp((lt - .6) / .6) : 0;
+    ctx.fillStyle = se ? `rgb(${lerp(46, 242, hl)},${lerp(60, 193, hl)},${lerp(84, 78, hl)})` : '#2e3c54';
+    ctx.strokeStyle = se ? '#fff3c4' : '#50627f'; ctx.lineWidth = se ? 2.5 : 1.2;
+    for (const r of rings) {
+      ctx.beginPath(); r.forEach(([x, y], i) => { const [px, py] = P(x, y); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); });
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
+  }
+  // labels
+  const lab = (t, lon, lat, size, col, a) => { if (a <= 0) return; const [x, y] = P(lon, lat); ctx.save(); ctx.globalAlpha = a; ctx.font = `800 ${size}px Inter`; ctx.textAlign = 'center'; ctx.fillStyle = col; ctx.shadowColor = '#000'; ctx.shadowBlur = 10; ctx.fillText(t, x, y); ctx.restore(); };
+  lab('SWEDEN', 14.6, 62.0, 64, '#1b1206', clamp((lt - .8) / .4));
+  lab('NORWAY', 9.2, 61.8, 36, '#8aa0c0', 1 - k); lab('FINLAND', 26.5, 63.2, 36, '#8aa0c0', 1 - k);
+  // Stockholm dot
+  const sa = clamp((lt - 1.6) / .4); if (sa > 0) { const [x, y] = P(18.07, 59.33); ctx.save(); ctx.globalAlpha = sa; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x, y, 7, 0, 7); ctx.fill(); ctx.font = '600 30px Inter'; ctx.fillText('Stockholm', x + 16, y + 10); ctx.restore(); }
+  // Gävle pin
+  const pt = L.pinT ?? 2.1, pa = lt - pt;
+  if (pa > 0) {
+    const [x, y] = P(17.14, 60.67), drop = pa < .35 ? (1 - eOut(pa / .35)) * -300 : 0;
+    for (let i = 0; i < 3; i++) { const q = ((lt - pt) * .8 + i / 3) % 1; ctx.strokeStyle = `rgba(255,60,40,${1 - q})`; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(x, y, 10 + q * 90, 0, 7); ctx.stroke(); }
+    ctx.save(); ctx.translate(x, y + drop);
+    ctx.fillStyle = '#ff2a2a'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.bezierCurveTo(-34, -40, -30, -80, 0, -84); ctx.bezierCurveTo(30, -80, 34, -40, 0, 0); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, -56, 12, 0, 7); ctx.fill(); ctx.restore();
+    const la = clamp((pa - .3) / .3);
+    ctx.save(); ctx.globalAlpha = la; ctx.translate(x + 50, y - 40); ctx.scale(pop(pa - .3), pop(pa - .3));
+    strokeText('GÄVLE', 0, 0, { size: 96, font: 'Anton', fill: '#ffd400', align: 'left', stroke: 12 }); ctx.restore();
+    if (pa > .9) {
+      const gk = pop(pa - .9, .35); ctx.save(); ctx.translate(x - 190, y + 60); ctx.scale(gk, gk);
+      ctx.fillStyle = '#10213d'; ctx.strokeStyle = '#ffd400'; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(0, -20, 80, 0, 7); ctx.fill(); ctx.stroke();
+      goatIcon(-4, 0, 1.5, 0, lt, 1); ctx.restore();
+      ctx.save(); ctx.strokeStyle = '#ffd400'; ctx.lineWidth = 4; ctx.setLineDash([8, 8]); ctx.beginPath(); ctx.moveTo(x - 10, y + 10); ctx.lineTo(x - 110, y + 50); ctx.stroke(); ctx.restore();
+    }
+  }
+  ctx.restore();
+};
+
+// kinetic typography: words pop in one by one at their times, laid out on centred lines
+R.kinetic = (L, lt) => {
+  const size = L.size || 110, lh = size * 1.12, y0 = L.y ?? 200;
+  ctx.save(); ctx.font = `${size}px Luckiest`;
+  const lines = []; let cur = [], wsum = 0;
+  for (const w of L.words) {
+    const ww = ctx.measureText(w.text + ' ').width;
+    if (w.br || (wsum + ww > (L.maxW || 1650) && cur.length)) { lines.push([cur, wsum]); cur = []; wsum = 0; }
+    cur.push({ ...w, ww }); wsum += ww;
+  }
+  lines.push([cur, wsum]);
+  const a = fade(lt, L.dur, 0, .25);
+  lines.forEach(([ws, tw], li) => {
+    let x = W / 2 - tw / 2;
+    for (const w of ws) {
+      const d = lt - w.t;
+      if (d >= 0) {
+        const k = pop(d, .22), rot = (1 - clamp(d / .22)) * (w.t * 7 % 2 ? .3 : -.3);
+        ctx.save(); ctx.globalAlpha = a; ctx.translate(x + w.ww / 2, y0 + li * lh); ctx.rotate(rot); ctx.scale(k, k);
+        if (w.hl) { ctx.fillStyle = w.hl; ctx.save(); ctx.transform(1, 0, -.15, 1, 0, 0); ctx.fillRect(-w.ww / 2 - 6, -size * .55, w.ww - size * .15, size * 1.05); ctx.restore(); }
+        strokeText(w.text, 0, 0, { size, fill: w.fill || '#fff', stroke: size * .14 });
+        ctx.restore();
+      }
+      x += w.ww;
+    }
+  });
+  ctx.restore();
+};
+
+// comic speech bubble with typewriter text
+R.bubble = (L, lt) => {
+  const k = eBack(clamp(lt / .3)), a = fade(lt, L.dur, 0, .25);
+  const txt = L.text.slice(0, Math.ceil(L.text.length * clamp((lt - .15) / (L.typeD || .8))));
+  ctx.save(); ctx.globalAlpha = a; ctx.translate(L.x ?? 1250, L.y ?? 330); ctx.scale(k, k); ctx.rotate((L.rot ?? -3) * Math.PI / 180);
+  ctx.font = `${L.size || 72}px Luckiest`;
+  const lines = L.text.split('\n'), w = Math.max(...lines.map(l => ctx.measureText(l).width)) + 110, h = lines.length * (L.size || 72) * 1.15 + 80;
+  ctx.fillStyle = '#fff'; ctx.strokeStyle = '#111'; ctx.lineWidth = 10;
+  ctx.beginPath(); ctx.ellipse(0, 0, w / 2, h / 2, 0, 0, 7); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-w * .18, h * .38); ctx.lineTo(-w * .38 + (L.tailX || 0), h * .85); ctx.lineTo(-w * .02, h * .45); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#fff'; ctx.fillRect(-w * .17, h * .36, w * .14, 16);
+  ctx.fillStyle = '#111'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const tl = txt.split('\n');
+  tl.forEach((l, i) => ctx.fillText(l, 0, (i - (lines.length - 1) / 2) * (L.size || 72) * 1.15));
+  ctx.restore();
+};
+
+// end poll: WILL IT SURVIVE?
+R.poll = (L, lt) => {
+  const a = fade(lt, L.dur, .2, .4);
+  ctx.save(); ctx.globalAlpha = a;
+  ctx.fillStyle = 'rgba(10,6,4,.78)'; roundRect(W / 2 - 620, 250, 1240, 600, 34); ctx.fill();
+  ctx.strokeStyle = '#ff8a1f'; ctx.lineWidth = 4; roundRect(W / 2 - 620, 250, 1240, 600, 34); ctx.stroke();
+  strokeText('THIS YEAR:', W / 2, 320, { size: 60, font: 'Anton', fill: '#ffd400', stroke: 8 });
+  strokeText('WILL IT SURVIVE?', W / 2, 410, { size: 96, font: 'Luckiest', fill: '#fff', stroke: 12 });
+  const opts = [['🔥', 'BONFIRE', '#ff3b2f', L.p1 ?? .83], ['🐐', 'SURVIVES', '#27c25a', L.p2 ?? .17]];
+  opts.forEach(([ic, lab, col, pct], i) => {
+    const y = 520 + i * 130, g = eOut(clamp((lt - .6 - i * .2) / 1.2)) * pct;
+    ctx.fillStyle = 'rgba(255,255,255,.08)'; roundRect(W / 2 - 520, y, 1040, 96, 18); ctx.fill();
+    ctx.fillStyle = col; roundRect(W / 2 - 520, y, Math.max(40, 1040 * g), 96, 18); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = '800 50px Inter'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText(lab, W / 2 - 490, y + 50);
+    ctx.textAlign = 'right'; ctx.fillText(Math.round(g * 100) + '%', W / 2 + 500, y + 50);
+  });
+  const b = Math.sin(lt * 6) * 8;
+  ctx.textAlign = 'center'; ctx.fillStyle = '#ffd400'; ctx.font = '800 44px Inter';
+  ctx.fillText('↓  PREDICT IN THE COMMENTS  ↓', W / 2, 800 + b);
   ctx.restore();
 };
 
